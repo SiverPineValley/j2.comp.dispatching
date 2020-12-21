@@ -3,6 +3,6 @@ package models
 type SheetComp struct {
 	Date         string
 	LicensePlate string
-	Departure    string
+	Source       string
 	Destination  string
 }
