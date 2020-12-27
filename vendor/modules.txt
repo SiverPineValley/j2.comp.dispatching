@@ -22,9 +22,12 @@ github.com/shabbyrobe/xmlwriter
 # github.com/tealeg/xlsx/v3 v3.2.3
 ## explicit
 github.com/tealeg/xlsx/v3
-# golang.org/x/text v0.3.2
+# golang.org/x/text v0.3.4
+## explicit
 golang.org/x/text/encoding
+golang.org/x/text/encoding/internal
 golang.org/x/text/encoding/internal/identifier
+golang.org/x/text/encoding/korean
 golang.org/x/text/transform
 # golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543
 golang.org/x/xerrors

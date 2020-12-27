@@ -1,9 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"strings"
+
+	"golang.org/x/text/encoding/korean"
+	"golang.org/x/text/transform"
 
 	"github.com/tealeg/xlsx/v3"
 	"js.comp.dispatching/src/models"
@@ -45,15 +49,61 @@ func main() {
 		return
 	}
 
-	// J2 Parse Data
-	parseJ2Data(j2Sheet)
+	// Parse Data
+	j2Data := parseJ2Data(j2Sheet)
+	cjData := parseCJData(cjSheet)
 
-	// CJ Parse Data
-	// cjDate := "날 짜"
-	// cjLicensePlate := "차량 번호"
-	// cjDeparture := "출발터미널"
-	// cjDestination := "도착터미널"
-	parseCJData(cjSheet)
+	// J2 파일 생성
+	j2File, err := os.Create("./j2.csv")
+	if err != nil {
+		panic(err)
+	}
+
+	// J2 csv writer 생성
+	j2Wr := transform.NewWriter(bufio.NewWriter(j2File), korean.EUCKR.NewEncoder())
+
+	// J2 내용 쓰기
+	j2Wr.Write([]byte("날짜, 차량번호, 출발, 도착, NO\n"))
+	for key, value := range j2Data {
+		each := key.Date + ", " + key.LicensePlate + ", " + key.Source + ", " + key.Destination
+		no := value[0]
+
+		for idx := 1; idx < len(value); idx++ {
+			no = no + " " + value[idx]
+		}
+
+		each = each + ", " + no + "\n"
+		j2Wr.Write([]byte(each))
+	}
+
+	j2Wr.Close()
+
+	// CJ 파일 생성
+	cjFile, err := os.Create("./cj.csv")
+	if err != nil {
+		panic(err)
+	}
+
+	// CJ csv writer 생성
+	cjWr := transform.NewWriter(bufio.NewWriter(cjFile), korean.EUCKR.NewEncoder())
+
+	// CJ 내용 쓰기
+	cjWr.Write([]byte("날짜, 차량번호, 출발, 도착, NO\n"))
+	for key, value := range j2Data {
+		each := key.Date + ", " + key.LicensePlate + ", " + key.Source + ", " + key.Destination
+		no := value[0]
+
+		for idx := 1; idx < len(value); idx++ {
+			no = no + " " + value[idx]
+		}
+
+		each = each + ", " + no + "\n"
+		cjWr.Write([]byte(each))
+	}
+
+	cjWr.Close()
+
+	fmt.Println(len(j2Data), "<- j2 길이, cj 길이 ->", len(cjData))
 }
 
 func getCellTitle(sh *xlsx.Sheet, title []string, startIdx int) []int {
@@ -73,17 +123,22 @@ func getCellTitle(sh *xlsx.Sheet, title []string, startIdx int) []int {
 	return res
 }
 
-func parseJ2Data(j2Sheet *xlsx.Sheet) []models.SheetComp {
-	var j2Titles = [...]string{"날 짜", "차량 번호", "운행 노선"}
+func parseJ2Data(j2Sheet *xlsx.Sheet) map[models.SheetComp][]string {
+	var j2Titles = [...]string{"no", "날 짜", "차량 번호", "운행 노선"}
 	var startIdx = 5
 	j2TitleIdx := getCellTitle(j2Sheet, j2Titles[:], startIdx)
 
-	dateIdx := j2TitleIdx[0]
-	licenceIdx := j2TitleIdx[1]
-	routeIdx := j2TitleIdx[2]
+	noIdx := j2TitleIdx[0]
+	dateIdx := j2TitleIdx[1]
+	licenceIdx := j2TitleIdx[2]
+	routeIdx := j2TitleIdx[3]
 
-	result := make([]models.SheetComp, j2Sheet.MaxRow)
+	result := make(map[models.SheetComp][]string)
 	for idx := 0 + startIdx + 1; idx < j2Sheet.MaxRow; idx++ {
+		// No
+		noCell, _ := j2Sheet.Cell(idx, noIdx)
+		no := noCell.String()
+
 		// 날짜
 		dateCell, _ := j2Sheet.Cell(idx, dateIdx)
 		date, _ := dateCell.GetTime(false)
@@ -105,6 +160,10 @@ func parseJ2Data(j2Sheet *xlsx.Sheet) []models.SheetComp {
 		source := slice[0]
 		dest := slice[1]
 
+		if no == "" && date.String() == "" && licensePlate == "" && source == "" && dest == "" {
+			break
+		}
+
 		if strings.Contains(source, "이천MP") || strings.Contains(dest, "이천MP") {
 			each := new(models.SheetComp)
 			each.Date = date.String()
@@ -112,25 +171,34 @@ func parseJ2Data(j2Sheet *xlsx.Sheet) []models.SheetComp {
 			each.Source = source
 			each.Destination = dest
 
-			result = append(result, *each)
-			// fmt.Println(*each)
+			if _, exists := result[*each]; !exists {
+				result[*each] = make([]string, 0)
+			}
+
+			result[*each] = append(result[*each], no)
+			// result = append(result, *each)
 		}
 	}
 
 	return result
 }
 
-func parseCJData(cjSheet *xlsx.Sheet) []models.SheetComp {
-	var cjTitles = [...]string{"출발일자", "차량번호", "출발터미널", "도착터미널"}
+func parseCJData(cjSheet *xlsx.Sheet) map[models.SheetComp][]string {
+	var cjTitles = [...]string{"NO", "출발일자", "차량번호", "출발터미널", "도착터미널"}
 	cjTitleIdx := getCellTitle(cjSheet, cjTitles[:], 0)
 
-	dateIdx := cjTitleIdx[0]
-	licenceIdx := cjTitleIdx[1]
-	sourceIdx := cjTitleIdx[2]
-	destIdx := cjTitleIdx[3]
+	noIdx := cjTitleIdx[0]
+	dateIdx := cjTitleIdx[1]
+	licenceIdx := cjTitleIdx[2]
+	sourceIdx := cjTitleIdx[3]
+	destIdx := cjTitleIdx[4]
 
-	result := make([]models.SheetComp, cjSheet.MaxRow)
+	result := make(map[models.SheetComp][]string)
 	for idx := 0 + 1; idx < cjSheet.MaxRow; idx++ {
+		// No
+		noCell, _ := cjSheet.Cell(idx, noIdx)
+		no := noCell.String()
+
 		// 날짜
 		dateCell, _ := cjSheet.Cell(idx, dateIdx)
 		date, _ := dateCell.GetTime(false)
@@ -153,8 +221,8 @@ func parseCJData(cjSheet *xlsx.Sheet) []models.SheetComp {
 		dest = strings.Replace(dest, "Sub", "", -1) // Sub 제거
 		dest = strings.Replace(dest, "Hub", "", -1) // Hub 제거
 
-		if date.String() == "" && licensePlate == "" && source == "" && dest == "" {
-			continue
+		if no == "합계" || date.String() == "" && licensePlate == "" && source == "" && dest == "" {
+			break
 		}
 
 		if strings.Contains(source, "이천MP") || strings.Contains(dest, "이천MP") {
@@ -164,8 +232,11 @@ func parseCJData(cjSheet *xlsx.Sheet) []models.SheetComp {
 			each.Source = source
 			each.Destination = dest
 
-			result = append(result, *each)
-			fmt.Println(*each)
+			if _, exists := result[*each]; !exists {
+				result[*each] = make([]string, 0)
+			}
+
+			result[*each] = append(result[*each], no)
 		}
 	}
 
