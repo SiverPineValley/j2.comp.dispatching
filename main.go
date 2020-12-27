@@ -24,7 +24,7 @@ func main() {
 	j2FileName := args[0]
 	cjFileName := args[1]
 
-	j2SheetName, cjSheetName := getSheetName()
+	j2SheetName, cjSheetName, resultFileName := getSheetName()
 
 	// Open an existing file and sheets
 	j2, err := xlsx.OpenFile("./" + j2FileName)
@@ -57,7 +57,7 @@ func main() {
 	comData := compareData(j2Data, cjData)
 
 	// Write Compare Data
-	writeCSVData(comData)
+	writeCSVData(resultFileName, comData)
 
 	fmt.Println("Comp Data: ", len(comData))
 }
@@ -66,9 +66,9 @@ func writeXlsxData(comData []models.CompData) {
 	// file := xlsx.NewFile()
 }
 
-func writeCSVData(comData []models.CompData) {
+func writeCSVData(resultFileName string, comData []models.CompData) {
 	// Comp 파일 생성
-	resFile, err := os.Create("./result.csv")
+	resFile, err := os.Create("./" + resultFileName)
 	if err != nil {
 		panic(err)
 	}
@@ -316,12 +316,15 @@ func parseCJData(cjSheet *xlsx.Sheet) map[models.SheetComp][]string {
 
 }
 
-func getSheetName() (j2SheetName, cjSheetName string) {
+func getSheetName() (j2SheetName, cjSheetName, resultFileName string) {
 	fmt.Print("J2 파일 시트명(Default: sheet1): ")
 	fmt.Scanln(&j2SheetName)
 
 	fmt.Print("CJ 파일 시트명(Default: sheet1): ")
 	fmt.Scanln(&cjSheetName)
+
+	fmt.Print("결과 파일명(Default: result.csv): ")
+	fmt.Scanln(&resultFileName)
 
 	if j2SheetName == "" {
 		j2SheetName = "sheet1"
@@ -329,6 +332,10 @@ func getSheetName() (j2SheetName, cjSheetName string) {
 
 	if cjSheetName == "" {
 		cjSheetName = "sheet1"
+	}
+
+	if resultFileName == "" {
+		resultFileName = "result.csv"
 	}
 
 	return
