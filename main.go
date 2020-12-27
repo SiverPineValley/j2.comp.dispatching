@@ -4,12 +4,12 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
+	"github.com/tealeg/xlsx/v3"
 	"golang.org/x/text/encoding/korean"
 	"golang.org/x/text/transform"
-
-	"github.com/tealeg/xlsx/v3"
 	"js.comp.dispatching/src/models"
 )
 
@@ -53,57 +53,129 @@ func main() {
 	j2Data := parseJ2Data(j2Sheet)
 	cjData := parseCJData(cjSheet)
 
-	// J2 파일 생성
-	j2File, err := os.Create("./j2.csv")
+	// Compare Data
+	comData := compareData(j2Data, cjData)
+
+	// Write Compare Data
+	writeCSVData(comData)
+
+	fmt.Println("Comp Data: ", len(comData))
+}
+
+func writeXlsxData(comData []models.CompData) {
+	// file := xlsx.NewFile()
+}
+
+func writeCSVData(comData []models.CompData) {
+	// Comp 파일 생성
+	resFile, err := os.Create("./result.csv")
 	if err != nil {
 		panic(err)
 	}
 
-	// J2 csv writer 생성
-	j2Wr := transform.NewWriter(bufio.NewWriter(j2File), korean.EUCKR.NewEncoder())
+	// Comp csv writer 생성
+	w := bufio.NewWriter(resFile)
+	resWr := transform.NewWriter(w, korean.EUCKR.NewEncoder())
 
-	// J2 내용 쓰기
-	j2Wr.Write([]byte("날짜, 차량번호, 출발, 도착, NO\n"))
-	for key, value := range j2Data {
-		each := key.Date + ", " + key.LicensePlate + ", " + key.Source + ", " + key.Destination
-		no := value[0]
+	// Comp 내용 쓰기
+	resWr.Write([]byte("NO, 날짜, 차량번호, 출발, 도착, J2, CJ, J2_NO, CJ_NO\n"))
+	for idx, value := range comData {
+		each := strconv.Itoa(idx) + ", " + value.Date + ", " + value.LicensePlate + ", " + value.Source + ", " + value.Destination
 
-		for idx := 1; idx < len(value); idx++ {
-			no = no + " " + value[idx]
+		if value.J2 && !value.CJ {
+			each = each + ",TRUE, FALSE, " + getArrayData(value.J2No)
+		} else if !value.J2 && value.CJ {
+			each = each + ",FALSE, TRUE, ," + getArrayData(value.CJNo)
+		} else {
+			each = each + ",TRUE, TRUE, " + getArrayData(value.J2No) + "," + getArrayData(value.CJNo)
 		}
 
-		each = each + ", " + no + "\n"
-		j2Wr.Write([]byte(each))
+		each = each + "\n"
+		resWr.Write([]byte(each))
+		w.Flush()
 	}
 
-	j2Wr.Close()
+	resWr.Close()
+}
 
-	// CJ 파일 생성
-	cjFile, err := os.Create("./cj.csv")
-	if err != nil {
-		panic(err)
+func getArrayData(arr []string) string {
+	if len(arr) == 0 {
+		return ""
 	}
 
-	// CJ csv writer 생성
-	cjWr := transform.NewWriter(bufio.NewWriter(cjFile), korean.EUCKR.NewEncoder())
+	no := arr[0]
 
-	// CJ 내용 쓰기
-	cjWr.Write([]byte("날짜, 차량번호, 출발, 도착, NO\n"))
+	for idx := 1; idx < len(arr); idx++ {
+		no = no + " " + arr[idx]
+	}
+	return no
+}
+
+func compareData(j2Data, cjData map[models.SheetComp][]string) (result []models.CompData) {
+	result = make([]models.CompData, 0)
 	for key, value := range j2Data {
-		each := key.Date + ", " + key.LicensePlate + ", " + key.Source + ", " + key.Destination
-		no := value[0]
-
-		for idx := 1; idx < len(value); idx++ {
-			no = no + " " + value[idx]
+		cjValue, exists := cjData[key]
+		// J2에만 있으면 J2에만 있다고 추가
+		if !exists {
+			result = append(result, models.CompData{
+				Date:         key.Date,
+				LicensePlate: key.LicensePlate,
+				Source:       key.Source,
+				Destination:  key.Destination,
+				J2No:         value,
+				J2:           true,
+				CJ:           false})
+			delete(j2Data, key)
+			continue
 		}
 
-		each = each + ", " + no + "\n"
-		cjWr.Write([]byte(each))
+		// 둘다 있고 개수 동일하면 둘다 추가 X
+		// 개수 다르면 둘다 추가 O
+		if len(value) == len(cjValue) {
+			delete(j2Data, key)
+			delete(cjData, key)
+			continue
+		} else {
+			result = append(result, models.CompData{
+				Date:         key.Date,
+				LicensePlate: key.LicensePlate,
+				Source:       key.Source,
+				Destination:  key.Destination,
+				J2No:         value,
+				CJNo:         cjValue,
+				J2:           true,
+				CJ:           true})
+			delete(j2Data, key)
+			delete(cjData, key)
+			continue
+		}
 	}
 
-	cjWr.Close()
+	// J2에만 있는 녀석
+	for key, value := range j2Data {
+		result = append(result, models.CompData{
+			Date:         key.Date,
+			LicensePlate: key.LicensePlate,
+			Source:       key.Source,
+			Destination:  key.Destination,
+			J2No:         value,
+			J2:           true,
+			CJ:           false})
+	}
 
-	fmt.Println(len(j2Data), "<- j2 길이, cj 길이 ->", len(cjData))
+	// CJ에만 있는 녀석
+	for key, value := range cjData {
+		result = append(result, models.CompData{
+			Date:         key.Date,
+			LicensePlate: key.LicensePlate,
+			Source:       key.Source,
+			Destination:  key.Destination,
+			CJNo:         value,
+			J2:           false,
+			CJ:           true})
+	}
+
+	return
 }
 
 func getCellTitle(sh *xlsx.Sheet, title []string, startIdx int) []int {
@@ -221,7 +293,7 @@ func parseCJData(cjSheet *xlsx.Sheet) map[models.SheetComp][]string {
 		dest = strings.Replace(dest, "Sub", "", -1) // Sub 제거
 		dest = strings.Replace(dest, "Hub", "", -1) // Hub 제거
 
-		if no == "합계" || date.String() == "" && licensePlate == "" && source == "" && dest == "" {
+		if no == "합계" || no == "" && date.String() == "" && licensePlate == "" && source == "" && dest == "" {
 			break
 		}
 
