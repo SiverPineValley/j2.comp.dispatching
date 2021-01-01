@@ -29,6 +29,10 @@ func main() {
 	cjFileName := args[1]
 
 	j2SheetName, cjSheetName, resultFileName := getSheetName()
+	if j2SheetName == "" || cjSheetName == "" || resultFileName == "" {
+		fmt.Println(models.InputErr)
+		return
+	}
 
 	// Open an existing file and sheets
 	j2, err := xlsx.OpenFile("./" + j2FileName)
@@ -326,18 +330,20 @@ func parseCJData(cjSheet *xlsx.Sheet) map[models.SheetComp][]string {
 }
 
 func getSheetName() (j2SheetName, cjSheetName, resultFileName string) {
-	// fmt.Print("J2 파일 시트명(Default: sheet1): ")
-	// fmt.Scanln(&j2SheetName)
+	fmt.Print("J2 파일 시트명(Default: sheet1): ")
+	j2Buf := bufio.NewScanner(os.Stdin)
+	j2Buf.Scan()
+	j2SheetName = j2Buf.Text()
 
-	// fmt.Print("CJ 파일 시트명(Default: sheet1): ")
-	// fmt.Scanln(&cjSheetName)
+	fmt.Print("CJ 파일 시트명(Default: sheet1): ")
+	cjBuf := bufio.NewScanner(os.Stdin)
+	cjBuf.Scan()
+	cjSheetName = cjBuf.Text()
 
-	// fmt.Print("결과 파일명(Default: result.csv): ")
-	// fmt.Scanln(&resultFileName)
-
-	j2SheetName = ""
-	cjSheetName = ""
-	resultFileName = ""
+	fmt.Print("결과 파일명(Default: result.csv): ")
+	resBuf := bufio.NewScanner(os.Stdin)
+	resBuf.Scan()
+	resultFileName = resBuf.Text()
 
 	if j2SheetName == "" {
 		j2SheetName = "sheet1"
