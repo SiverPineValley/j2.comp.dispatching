@@ -10,8 +10,12 @@ import (
 	"github.com/tealeg/xlsx/v3"
 	"golang.org/x/text/encoding/korean"
 	"golang.org/x/text/transform"
+
+	"js.comp.dispatching/src/config"
 	"js.comp.dispatching/src/models"
 )
+
+var configFile *config.Config
 
 func main() {
 	// Get Args
@@ -48,6 +52,10 @@ func main() {
 		fmt.Println(models.CJFileNameErr)
 		return
 	}
+
+	// Init Config
+	configFile = new(config.Config)
+	config.InitConfig(configFile)
 
 	// Parse Data
 	j2Data := parseJ2Data(j2Sheet)
@@ -196,8 +204,8 @@ func getCellTitle(sh *xlsx.Sheet, title []string, startIdx int) []int {
 }
 
 func parseJ2Data(j2Sheet *xlsx.Sheet) map[models.SheetComp][]string {
-	var j2Titles = [...]string{"no", "날 짜", "차량 번호", "운행 노선"}
-	var startIdx = 5
+	var j2Titles = [...]string{configFile.J2.No, configFile.J2.Date, configFile.J2.LicensePlate, configFile.J2.Route}
+	var startIdx = configFile.J2.StartIdx
 	j2TitleIdx := getCellTitle(j2Sheet, j2Titles[:], startIdx)
 
 	noIdx := j2TitleIdx[0]
@@ -256,8 +264,9 @@ func parseJ2Data(j2Sheet *xlsx.Sheet) map[models.SheetComp][]string {
 }
 
 func parseCJData(cjSheet *xlsx.Sheet) map[models.SheetComp][]string {
-	var cjTitles = [...]string{"NO", "출발일자", "차량번호", "출발터미널", "도착터미널"}
+	var cjTitles = [...]string{configFile.Cj.No, configFile.Cj.Date, configFile.Cj.LicensePlate, configFile.Cj.Source, configFile.Cj.Destination}
 	cjTitleIdx := getCellTitle(cjSheet, cjTitles[:], 0)
+	var startIdx = configFile.Cj.StartIdx
 
 	noIdx := cjTitleIdx[0]
 	dateIdx := cjTitleIdx[1]
@@ -266,7 +275,7 @@ func parseCJData(cjSheet *xlsx.Sheet) map[models.SheetComp][]string {
 	destIdx := cjTitleIdx[4]
 
 	result := make(map[models.SheetComp][]string)
-	for idx := 0 + 1; idx < cjSheet.MaxRow; idx++ {
+	for idx := 0 + startIdx; idx < cjSheet.MaxRow; idx++ {
 		// No
 		noCell, _ := cjSheet.Cell(idx, noIdx)
 		no := noCell.String()
@@ -317,14 +326,18 @@ func parseCJData(cjSheet *xlsx.Sheet) map[models.SheetComp][]string {
 }
 
 func getSheetName() (j2SheetName, cjSheetName, resultFileName string) {
-	fmt.Print("J2 파일 시트명(Default: sheet1): ")
-	fmt.Scanln(&j2SheetName)
+	// fmt.Print("J2 파일 시트명(Default: sheet1): ")
+	// fmt.Scanln(&j2SheetName)
 
-	fmt.Print("CJ 파일 시트명(Default: sheet1): ")
-	fmt.Scanln(&cjSheetName)
+	// fmt.Print("CJ 파일 시트명(Default: sheet1): ")
+	// fmt.Scanln(&cjSheetName)
 
-	fmt.Print("결과 파일명(Default: result.csv): ")
-	fmt.Scanln(&resultFileName)
+	// fmt.Print("결과 파일명(Default: result.csv): ")
+	// fmt.Scanln(&resultFileName)
+
+	j2SheetName = ""
+	cjSheetName = ""
+	resultFileName = ""
 
 	if j2SheetName == "" {
 		j2SheetName = "sheet1"
