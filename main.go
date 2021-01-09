@@ -30,6 +30,10 @@ func main() {
 	cjFileName := args[1]
 
 	j2SheetName, cjSheetName, resultFileName, parseType := getParameters()
+	// j2SheetName := "배차 내역"
+	// cjSheetName := "sheet1"
+	// resultFileName := "result.csv"
+	// parseType := "2"
 	if j2SheetName == "" || cjSheetName == "" || resultFileName == "" {
 		fmt.Println(models.InputErr)
 		return
@@ -66,17 +70,13 @@ func main() {
 	j2Data := parseJ2Data(j2Sheet, parseType)
 	cjData := parseCJData(cjSheet, parseType)
 
-	switch parseType {
-	case models.ParseTypeIcheon:
-		// Compare Data
-		comData := compareData(j2Data, cjData)
+	// Compare Data
+	comData := compareData(j2Data, cjData)
 
-		// Write Compare Data
-		writeCSVData(resultFileName, comData)
+	// Write Compare Data
+	writeCSVData(resultFileName, parseType, comData)
 
-		fmt.Println("Comp Data: ", len(comData))
-
-	}
+	fmt.Println("Comp Data: ", len(comData))
 
 }
 
@@ -84,7 +84,7 @@ func writeXlsxData(comData []models.CompData) {
 	// file := xlsx.NewFile()
 }
 
-func writeCSVData(resultFileName string, comData []models.CompData) {
+func writeCSVData(resultFileName, parseType string, comData []models.CompData) {
 	// Comp 파일 생성
 	resFile, err := os.Create("./" + resultFileName)
 	if err != nil {
@@ -96,16 +96,19 @@ func writeCSVData(resultFileName string, comData []models.CompData) {
 	resWr := transform.NewWriter(w, korean.EUCKR.NewEncoder())
 
 	// Comp 내용 쓰기
-	resWr.Write([]byte("NO, 날짜, 차량번호, 출발, 도착, J2, CJ, J2_NO, CJ_NO\n"))
+	resWr.Write([]byte("NO, 날짜, 차량번호, 출발, 도착, J2, CJ, J2_NO, CJ_NO, 비고\n"))
+
 	for idx, value := range comData {
+		// 자체 No, 날짜, 차량번호, 출발, 도착
 		each := strconv.Itoa(idx) + ", " + value.Date + ", " + value.LicensePlate + ", " + value.Source + ", " + value.Destination
 
+		// Ture, False 및 No, 비고
 		if value.J2 && !value.CJ {
-			each = each + ",TRUE, FALSE, " + getArrayData(value.J2No)
+			each = each + ",TRUE, FALSE, " + getArrayData(value.J2No, " ")
 		} else if !value.J2 && value.CJ {
-			each = each + ",FALSE, TRUE, ," + getArrayData(value.CJNo)
+			each = each + ",FALSE, TRUE, ," + getArrayData(value.CJNo, " ") + "," + getArrayData(value.Reference, ",")
 		} else {
-			each = each + ",TRUE, TRUE, " + getArrayData(value.J2No) + "," + getArrayData(value.CJNo)
+			each = each + ",TRUE, TRUE, " + getArrayData(value.J2No, " ") + "," + getArrayData(value.CJNo, " ") + "," + getArrayData(value.Reference, ",")
 		}
 
 		each = each + "\n"
@@ -116,7 +119,7 @@ func writeCSVData(resultFileName string, comData []models.CompData) {
 	resWr.Close()
 }
 
-func getArrayData(arr []string) string {
+func getArrayData(arr []string, split string) string {
 	if len(arr) == 0 {
 		return ""
 	}
@@ -124,12 +127,12 @@ func getArrayData(arr []string) string {
 	no := arr[0]
 
 	for idx := 1; idx < len(arr); idx++ {
-		no = no + " " + arr[idx]
+		no = no + split + arr[idx]
 	}
 	return no
 }
 
-func compareData(j2Data, cjData map[models.SheetComp][]string) (result []models.CompData) {
+func compareData(j2Data map[models.SheetComp][]string, cjData map[models.SheetComp]models.CompReturn) (result []models.CompData) {
 	result = make([]models.CompData, 0)
 	for key, value := range j2Data {
 		cjValue, exists := cjData[key]
@@ -149,7 +152,7 @@ func compareData(j2Data, cjData map[models.SheetComp][]string) (result []models.
 
 		// 둘다 있고 개수 동일하면 둘다 추가 X
 		// 개수 다르면 둘다 추가 O
-		if len(value) == len(cjValue) {
+		if len(value) == len(cjValue.Idx) {
 			delete(j2Data, key)
 			delete(cjData, key)
 			continue
@@ -160,7 +163,8 @@ func compareData(j2Data, cjData map[models.SheetComp][]string) (result []models.
 				Source:       key.Source,
 				Destination:  key.Destination,
 				J2No:         value,
-				CJNo:         cjValue,
+				CJNo:         cjValue.Idx,
+				Reference:    cjValue.Reference,
 				J2:           true,
 				CJ:           true})
 			delete(j2Data, key)
@@ -188,7 +192,8 @@ func compareData(j2Data, cjData map[models.SheetComp][]string) (result []models.
 			LicensePlate: key.LicensePlate,
 			Source:       key.Source,
 			Destination:  key.Destination,
-			CJNo:         value,
+			CJNo:         value.Idx,
+			Reference:    value.Reference,
 			J2:           false,
 			CJ:           true})
 	}
@@ -214,7 +219,7 @@ func getCellTitle(sh *xlsx.Sheet, title []string, startIdx int) []int {
 }
 
 func parseJ2Data(j2Sheet *xlsx.Sheet, parseType string) map[models.SheetComp][]string {
-	var j2Titles = [...]string{configFile.J2.No, configFile.J2.Date, configFile.J2.LicensePlate, configFile.J2.Route}
+	var j2Titles = [...]string{configFile.J2.No, configFile.J2.Date, configFile.J2.LicensePlate, configFile.J2.Route, configFile.J2.Reference}
 	var startIdx = configFile.J2.StartIdx
 	j2TitleIdx := getCellTitle(j2Sheet, j2Titles[:], startIdx)
 
@@ -222,6 +227,7 @@ func parseJ2Data(j2Sheet *xlsx.Sheet, parseType string) map[models.SheetComp][]s
 	dateIdx := j2TitleIdx[1]
 	licenceIdx := j2TitleIdx[2]
 	routeIdx := j2TitleIdx[3]
+	referenceIdx := j2TitleIdx[4]
 
 	result := make(map[models.SheetComp][]string)
 	for idx := 0 + startIdx + 1; idx < j2Sheet.MaxRow; idx++ {
@@ -243,12 +249,24 @@ func parseJ2Data(j2Sheet *xlsx.Sheet, parseType string) map[models.SheetComp][]s
 		route = strings.Replace(route, " ", "", -1) // Trim
 		slice := strings.Split(route, "-")          // Split
 
+		// 비고
+		referenceCell, _ := j2Sheet.Cell(idx, referenceIdx)
+		reference := referenceCell.String()
+
+		// 시프트면 하루 + 1
+		if strings.Contains(reference, "시프트") {
+			date.AddDate(0, 0, 1)
+		}
+
 		if len(slice) < 2 {
 			continue
 		}
 
-		source := slice[0]
+		sourceLayover := slice[0]
 		dest := slice[1]
+		sliceLayover := strings.Split(sourceLayover, "/") // Split Layover
+		source := sliceLayover[0]
+		source = checkLayover(source)
 
 		if no == "" && date.String() == "" && licensePlate == "" && source == "" && dest == "" {
 			break
@@ -266,15 +284,14 @@ func parseJ2Data(j2Sheet *xlsx.Sheet, parseType string) map[models.SheetComp][]s
 			}
 
 			result[*each] = append(result[*each], no)
-			// result = append(result, *each)
 		}
 	}
 
 	return result
 }
 
-func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp][]string {
-	var cjTitles = [...]string{configFile.Cj.No, configFile.Cj.Date, configFile.Cj.LicensePlate, configFile.Cj.Source, configFile.Cj.Destination}
+func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]models.CompReturn {
+	var cjTitles = [...]string{configFile.Cj.No, configFile.Cj.Date, configFile.Cj.LicensePlate, configFile.Cj.Source, configFile.Cj.Destination, configFile.Cj.LayoverNum, configFile.Cj.CarType, configFile.Cj.Reference}
 	cjTitleIdx := getCellTitle(cjSheet, cjTitles[:], 0)
 	var startIdx = configFile.Cj.StartIdx
 
@@ -283,8 +300,11 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp][]s
 	licenceIdx := cjTitleIdx[2]
 	sourceIdx := cjTitleIdx[3]
 	destIdx := cjTitleIdx[4]
+	layoverNumIdx := cjTitleIdx[5]
+	carTypeIdx := cjTitleIdx[6]
+	referenceIdx := cjTitleIdx[7]
 
-	result := make(map[models.SheetComp][]string)
+	result := make(map[models.SheetComp]models.CompReturn)
 	for idx := 0 + startIdx; idx < cjSheet.MaxRow; idx++ {
 		// No
 		noCell, _ := cjSheet.Cell(idx, noIdx)
@@ -312,6 +332,21 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp][]s
 		dest = strings.Replace(dest, "Sub", "", -1) // Sub 제거
 		dest = strings.Replace(dest, "Hub", "", -1) // Hub 제거
 
+		// 경유 횟수
+		layoverNumCell, _ := cjSheet.Cell(idx, layoverNumIdx)
+		layoverNum := layoverNumCell.String()
+
+		// 차량 구분
+		carTypeCell, _ := cjSheet.Cell(idx, carTypeIdx)
+		carType := carTypeCell.String()
+
+		// 비고
+		referenceCell, _ := cjSheet.Cell(idx, referenceIdx)
+		reference := referenceCell.String()
+		if strings.Contains(reference, ",") {
+			reference = "\"" + reference + "\""
+		}
+
 		if no == "합계" || no == "" && date.String() == "" && licensePlate == "" && source == "" && dest == "" {
 			break
 		}
@@ -322,12 +357,22 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp][]s
 			each.LicensePlate = licensePlate
 			each.Source = source
 			each.Destination = dest
-
-			if _, exists := result[*each]; !exists {
-				result[*each] = make([]string, 0)
+			layoverNumInt, err := strconv.Atoi(layoverNum)
+			if err != nil {
+				layoverNumInt = 0
 			}
 
-			result[*each] = append(result[*each], no)
+			if _, exists := result[*each]; !exists {
+				value := new(models.CompReturn)
+				result[*each] = *value
+			}
+
+			value := result[*each]
+			value.Idx = append(value.Idx, no)
+			if (layoverNumInt >= 1 || carType == "직발송용차") && reference != "" {
+				value.Reference = append(value.Reference, reference)
+			}
+			result[*each] = value
 		}
 	}
 
@@ -353,10 +398,8 @@ func getParameters() (j2SheetName, cjSheetName, resultFileName, resultType strin
 
 	types := []string{"1", "2"}
 
-	fmt.Print("파싱 타입(1: 이천MP만, 2: 전체): ")
-	typeBuf := bufio.NewScanner(os.Stdin)
-	typeBuf.Scan()
-	resultType = typeBuf.Text()
+	fmt.Print("파싱 타입(1: 특정 Target만, 2: 전체): ")
+	fmt.Scanln(&resultType)
 
 	if j2SheetName == "" {
 		j2SheetName = "sheet1"
@@ -370,17 +413,18 @@ func getParameters() (j2SheetName, cjSheetName, resultFileName, resultType strin
 		resultFileName = "result.csv"
 	}
 
-	if utility.Contains(types, resultType) {
+	if !utility.Contains(types, resultType) {
 		resultType = "1"
 	}
 
 	return
 }
 
+// 가져오는 데이터가 맞는지 조건 확인
 func checkGetData(source, dest, parseType string) bool {
 	switch parseType {
 	case models.ParseTypeIcheon:
-		if strings.Contains(source, "이천MP") || strings.Contains(dest, "이천MP") {
+		if strings.Contains(source, configFile.Target) || strings.Contains(dest, configFile.Target) {
 			return true
 		}
 	case models.ParseTypeAll:
@@ -388,5 +432,12 @@ func checkGetData(source, dest, parseType string) bool {
 	}
 
 	return false
+}
 
+// Layover Check
+func checkLayover(key string) string {
+	if value, exists := configFile.Direct[key]; exists {
+		return value
+	}
+	return key
 }

@@ -12,11 +12,17 @@ type SheetComp struct {
 	Destination  string
 }
 
+type CompReturn struct {
+	Idx       []string
+	Reference []string
+}
+
 type CompData struct {
 	Date         string
 	LicensePlate string
 	Source       string
 	Destination  string
+	Reference    []string
 	J2No         []string
 	CJNo         []string
 	J2           bool

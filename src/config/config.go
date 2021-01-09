@@ -9,8 +9,10 @@ import (
 
 // Config is frame of config.toml
 type Config struct {
-	J2 ColumnTitle `toml:"j2"`
-	Cj ColumnTitle `toml:"cj"`
+	Target string            `toml:"target"`
+	J2     ColumnTitle       `toml:"j2"`
+	Cj     ColumnTitle       `toml:"cj"`
+	Direct map[string]string `toml:"direct"`
 }
 
 // ColumnTitle keep each j2, cj column name.
@@ -21,6 +23,9 @@ type ColumnTitle struct {
 	Source       string `toml:"source"`
 	Destination  string `toml:"destination"`
 	Route        string `toml:"route"`
+	LayoverNum   string `toml:"layoverNum"`
+	CarType      string `toml:"carType"`
+	Reference    string `toml:"reference"`
 	StartIdx     int    `toml:"startIndex"`
 }
 
