@@ -9,10 +9,10 @@ import (
 
 // Config is frame of config.toml
 type Config struct {
-	Target string            `toml:"target"`
-	J2     ColumnTitle       `toml:"j2"`
-	Cj     ColumnTitle       `toml:"cj"`
-	Direct map[string]string `toml:"direct"`
+	Target map[string][]string `toml:"target"`
+	J2     ColumnTitle         `toml:"j2"`
+	Cj     ColumnTitle         `toml:"cj"`
+	Direct map[string]string   `toml:"direct"`
 }
 
 // ColumnTitle keep each j2, cj column name.

@@ -13,7 +13,6 @@ import (
 
 	"js.comp.dispatching/src/config"
 	"js.comp.dispatching/src/models"
-	"js.comp.dispatching/src/utility"
 )
 
 var configFile *config.Config
@@ -29,11 +28,15 @@ func main() {
 	j2FileName := args[0]
 	cjFileName := args[1]
 
+	// Init Config
+	configFile = new(config.Config)
+	config.InitConfig(configFile)
+
 	j2SheetName, cjSheetName, resultFileName, parseType := getParameters()
 	// j2SheetName := "배차 내역"
 	// cjSheetName := "sheet1"
 	// resultFileName := "result.csv"
-	// parseType := "2"
+	// parseType := "1"
 	if j2SheetName == "" || cjSheetName == "" || resultFileName == "" {
 		fmt.Println(models.InputErr)
 		return
@@ -62,10 +65,6 @@ func main() {
 		return
 	}
 
-	// Init Config
-	configFile = new(config.Config)
-	config.InitConfig(configFile)
-
 	// Parse Data
 	j2Data := parseJ2Data(j2Sheet, parseType)
 	cjData := parseCJData(cjSheet, parseType)
@@ -74,7 +73,7 @@ func main() {
 	comData := compareData(j2Data, cjData)
 
 	// Write Compare Data
-	writeCSVData(resultFileName, parseType, comData)
+	writeCSVData(resultFileName, comData)
 
 	fmt.Println("Comp Data: ", len(comData))
 
@@ -84,7 +83,7 @@ func writeXlsxData(comData []models.CompData) {
 	// file := xlsx.NewFile()
 }
 
-func writeCSVData(resultFileName, parseType string, comData []models.CompData) {
+func writeCSVData(resultFileName string, comData []models.CompData) {
 	// Comp 파일 생성
 	resFile, err := os.Create("./" + resultFileName)
 	if err != nil {
@@ -321,9 +320,11 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 		// 출발
 		sourceCell, _ := cjSheet.Cell(idx, sourceIdx)
 		source := sourceCell.String()
-		source = strings.Replace(source, " ", "", -1)   // Trim
-		source = strings.Replace(source, "Sub", "", -1) // Sub 제거
-		source = strings.Replace(source, "Hub", "", -1) // Hub 제거
+		source = strings.Replace(source, " ", "", -1)           // Trim
+		source = strings.Replace(source, "이천MP", "이천", -1)      // 이천MP -> 이천
+		source = strings.Replace(source, "이천MPHub", "이천MP", -1) // 이천MPHub -> 이천MP
+		source = strings.Replace(source, "Sub", "", -1)         // Sub 제거
+		source = strings.Replace(source, "Hub", "", -1)         // Hub 제거
 
 		// 도착
 		destCell, _ := cjSheet.Cell(idx, destIdx)
@@ -396,9 +397,7 @@ func getParameters() (j2SheetName, cjSheetName, resultFileName, resultType strin
 	resBuf.Scan()
 	resultFileName = resBuf.Text()
 
-	types := []string{"1", "2"}
-
-	fmt.Print("파싱 타입(1: 특정 Target만, 2: 전체): ")
+	fmt.Print("파싱 타켓(TOML파일 target): ")
 	fmt.Scanln(&resultType)
 
 	if j2SheetName == "" {
@@ -413,7 +412,7 @@ func getParameters() (j2SheetName, cjSheetName, resultFileName, resultType strin
 		resultFileName = "result.csv"
 	}
 
-	if !utility.Contains(types, resultType) {
+	if _, exists := configFile.Target[resultType]; !exists {
 		resultType = "1"
 	}
 
@@ -422,13 +421,10 @@ func getParameters() (j2SheetName, cjSheetName, resultFileName, resultType strin
 
 // 가져오는 데이터가 맞는지 조건 확인
 func checkGetData(source, dest, parseType string) bool {
-	switch parseType {
-	case models.ParseTypeIcheon:
-		if strings.Contains(source, configFile.Target) || strings.Contains(dest, configFile.Target) {
+	for _, target := range configFile.Target[parseType] {
+		if strings.Contains(source, target) || strings.Contains(dest, target) {
 			return true
 		}
-	case models.ParseTypeAll:
-		return true
 	}
 
 	return false
