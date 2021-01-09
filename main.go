@@ -13,6 +13,7 @@ import (
 
 	"js.comp.dispatching/src/config"
 	"js.comp.dispatching/src/models"
+	"js.comp.dispatching/src/utility"
 )
 
 var configFile *config.Config
@@ -28,7 +29,7 @@ func main() {
 	j2FileName := args[0]
 	cjFileName := args[1]
 
-	j2SheetName, cjSheetName, resultFileName := getSheetName()
+	j2SheetName, cjSheetName, resultFileName, parseType := getParameters()
 	if j2SheetName == "" || cjSheetName == "" || resultFileName == "" {
 		fmt.Println(models.InputErr)
 		return
@@ -62,16 +63,21 @@ func main() {
 	config.InitConfig(configFile)
 
 	// Parse Data
-	j2Data := parseJ2Data(j2Sheet)
-	cjData := parseCJData(cjSheet)
+	j2Data := parseJ2Data(j2Sheet, parseType)
+	cjData := parseCJData(cjSheet, parseType)
 
-	// Compare Data
-	comData := compareData(j2Data, cjData)
+	switch parseType {
+	case models.ParseTypeIcheon:
+		// Compare Data
+		comData := compareData(j2Data, cjData)
 
-	// Write Compare Data
-	writeCSVData(resultFileName, comData)
+		// Write Compare Data
+		writeCSVData(resultFileName, comData)
 
-	fmt.Println("Comp Data: ", len(comData))
+		fmt.Println("Comp Data: ", len(comData))
+
+	}
+
 }
 
 func writeXlsxData(comData []models.CompData) {
@@ -207,7 +213,7 @@ func getCellTitle(sh *xlsx.Sheet, title []string, startIdx int) []int {
 	return res
 }
 
-func parseJ2Data(j2Sheet *xlsx.Sheet) map[models.SheetComp][]string {
+func parseJ2Data(j2Sheet *xlsx.Sheet, parseType string) map[models.SheetComp][]string {
 	var j2Titles = [...]string{configFile.J2.No, configFile.J2.Date, configFile.J2.LicensePlate, configFile.J2.Route}
 	var startIdx = configFile.J2.StartIdx
 	j2TitleIdx := getCellTitle(j2Sheet, j2Titles[:], startIdx)
@@ -248,7 +254,7 @@ func parseJ2Data(j2Sheet *xlsx.Sheet) map[models.SheetComp][]string {
 			break
 		}
 
-		if strings.Contains(source, "이천MP") || strings.Contains(dest, "이천MP") {
+		if checkGetData(source, dest, parseType) {
 			each := new(models.SheetComp)
 			each.Date = date.String()
 			each.LicensePlate = licensePlate
@@ -267,7 +273,7 @@ func parseJ2Data(j2Sheet *xlsx.Sheet) map[models.SheetComp][]string {
 	return result
 }
 
-func parseCJData(cjSheet *xlsx.Sheet) map[models.SheetComp][]string {
+func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp][]string {
 	var cjTitles = [...]string{configFile.Cj.No, configFile.Cj.Date, configFile.Cj.LicensePlate, configFile.Cj.Source, configFile.Cj.Destination}
 	cjTitleIdx := getCellTitle(cjSheet, cjTitles[:], 0)
 	var startIdx = configFile.Cj.StartIdx
@@ -310,7 +316,7 @@ func parseCJData(cjSheet *xlsx.Sheet) map[models.SheetComp][]string {
 			break
 		}
 
-		if strings.Contains(source, "이천MP") || strings.Contains(dest, "이천MP") {
+		if checkGetData(source, dest, parseType) {
 			each := new(models.SheetComp)
 			each.Date = date.String()
 			each.LicensePlate = licensePlate
@@ -329,7 +335,7 @@ func parseCJData(cjSheet *xlsx.Sheet) map[models.SheetComp][]string {
 
 }
 
-func getSheetName() (j2SheetName, cjSheetName, resultFileName string) {
+func getParameters() (j2SheetName, cjSheetName, resultFileName, resultType string) {
 	fmt.Print("J2 파일 시트명(Default: sheet1): ")
 	j2Buf := bufio.NewScanner(os.Stdin)
 	j2Buf.Scan()
@@ -345,6 +351,13 @@ func getSheetName() (j2SheetName, cjSheetName, resultFileName string) {
 	resBuf.Scan()
 	resultFileName = resBuf.Text()
 
+	types := []string{"1", "2"}
+
+	fmt.Print("파싱 타입(1: 이천MP만, 2: 전체): ")
+	typeBuf := bufio.NewScanner(os.Stdin)
+	typeBuf.Scan()
+	resultType = typeBuf.Text()
+
 	if j2SheetName == "" {
 		j2SheetName = "sheet1"
 	}
@@ -357,5 +370,23 @@ func getSheetName() (j2SheetName, cjSheetName, resultFileName string) {
 		resultFileName = "result.csv"
 	}
 
+	if utility.Contains(types, resultType) {
+		resultType = "1"
+	}
+
 	return
+}
+
+func checkGetData(source, dest, parseType string) bool {
+	switch parseType {
+	case models.ParseTypeIcheon:
+		if strings.Contains(source, "이천MP") || strings.Contains(dest, "이천MP") {
+			return true
+		}
+	case models.ParseTypeAll:
+		return true
+	}
+
+	return false
+
 }

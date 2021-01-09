@@ -1,5 +1,10 @@
 package models
 
+const (
+	ParseTypeIcheon string = "1"
+	ParseTypeAll    string = "2"
+)
+
 type SheetComp struct {
 	Date         string
 	LicensePlate string
