@@ -4,6 +4,7 @@
 "2" = ["시흥", "수지", "안성", "단원"]
 "3" = ["수지", "안성"]
 "4" = ["단원"]
+"filter" = ["이천MP", "이그린"]
 
 [j2]
 no = "No."
@@ -11,6 +12,7 @@ date = "날 짜"
 licensePlate = "차량 번호"
 route = "운행 노선"
 reference = "비 고"
+targetCompany = "청구 업체"
 startIndex = 5
 
 [cj]

@@ -13,6 +13,7 @@ import (
 
 	"js.comp.dispatching/src/config"
 	"js.comp.dispatching/src/models"
+	"js.comp.dispatching/src/utility"
 )
 
 var configFile *config.Config
@@ -218,7 +219,7 @@ func getCellTitle(sh *xlsx.Sheet, title []string, startIdx int) []int {
 }
 
 func parseJ2Data(j2Sheet *xlsx.Sheet, parseType string) map[models.SheetComp][]string {
-	var j2Titles = [...]string{configFile.J2.No, configFile.J2.Date, configFile.J2.LicensePlate, configFile.J2.Route, configFile.J2.Reference}
+	var j2Titles = [...]string{configFile.J2.No, configFile.J2.Date, configFile.J2.LicensePlate, configFile.J2.Route, configFile.J2.Reference, configFile.J2.TargetCompany}
 	var startIdx = configFile.J2.StartIdx
 	j2TitleIdx := getCellTitle(j2Sheet, j2Titles[:], startIdx)
 
@@ -227,9 +228,18 @@ func parseJ2Data(j2Sheet *xlsx.Sheet, parseType string) map[models.SheetComp][]s
 	licenceIdx := j2TitleIdx[2]
 	routeIdx := j2TitleIdx[3]
 	referenceIdx := j2TitleIdx[4]
+	targetCompanyIdx := j2TitleIdx[5]
 
 	result := make(map[models.SheetComp][]string)
 	for idx := 0 + startIdx + 1; idx < j2Sheet.MaxRow; idx++ {
+		// 청구업체
+		targetCompanyCell, _ := j2Sheet.Cell(idx, targetCompanyIdx)
+		targetCompany := targetCompanyCell.String()
+
+		if value, exists := configFile.Target["filter"]; exists && len(value) > 0 && !utility.Contains(value, targetCompany) {
+			continue
+		}
+
 		// No
 		noCell, _ := j2Sheet.Cell(idx, noIdx)
 		no := noCell.String()
@@ -325,6 +335,8 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 		source = strings.Replace(source, "이천MPHub", "이천MP", -1) // 이천MPHub -> 이천MP
 		source = strings.Replace(source, "Sub", "", -1)         // Sub 제거
 		source = strings.Replace(source, "Hub", "", -1)         // Hub 제거
+		source = strings.Replace(source, "콘솔", "", -1)          // 콘솔 제거
+		source = checkLayover(source)
 
 		// 도착
 		destCell, _ := cjSheet.Cell(idx, destIdx)
@@ -332,6 +344,7 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 		dest = strings.Replace(dest, " ", "", -1)   // Trim
 		dest = strings.Replace(dest, "Sub", "", -1) // Sub 제거
 		dest = strings.Replace(dest, "Hub", "", -1) // Hub 제거
+		dest = strings.Replace(dest, "콘솔", "", -1)  // 콘솔 제거
 
 		// 경유 횟수
 		layoverNumCell, _ := cjSheet.Cell(idx, layoverNumIdx)
