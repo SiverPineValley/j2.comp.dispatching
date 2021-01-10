@@ -391,9 +391,7 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 
 			value := result[*each]
 			value.Idx = append(value.Idx, no)
-			if (layoverNumInt >= 1 || carType == "직발송용차") && reference != "" {
-				value.Reference = append(value.Reference, reference)
-			}
+			value.Reference = append(value.Reference, reference)
 			result[*each] = value
 		}
 	}
