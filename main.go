@@ -308,7 +308,7 @@ func parseJ2Data(j2Sheet *xlsx.Sheet, parseType string) map[models.SheetComp][]s
 }
 
 func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]models.CompReturn {
-	var cjTitles = [...]string{configFile.Cj.No, configFile.Cj.Date, configFile.Cj.LicensePlate, configFile.Cj.Source, configFile.Cj.Destination, configFile.Cj.LayoverNum, configFile.Cj.CarType, configFile.Cj.Reference}
+	var cjTitles = [...]string{configFile.Cj.No, configFile.Cj.Date, configFile.Cj.LicensePlate, configFile.Cj.Source, configFile.Cj.Destination, configFile.Cj.Reference} // configFile.Cj.LayoverNum, configFile.Cj.CarType}
 	cjTitleIdx := getCellTitle(cjSheet, cjTitles[:], 0)
 	var startIdx = configFile.Cj.StartIdx
 
@@ -317,9 +317,9 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 	licenceIdx := cjTitleIdx[2]
 	sourceIdx := cjTitleIdx[3]
 	destIdx := cjTitleIdx[4]
-	layoverNumIdx := cjTitleIdx[5]
-	carTypeIdx := cjTitleIdx[6]
-	referenceIdx := cjTitleIdx[7]
+	// layoverNumIdx := cjTitleIdx[5]
+	// carTypeIdx := cjTitleIdx[6]
+	referenceIdx := cjTitleIdx[5]
 
 	result := make(map[models.SheetComp]models.CompReturn)
 	for idx := 0 + startIdx; idx < cjSheet.MaxRow; idx++ {
@@ -355,12 +355,12 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 		dest = strings.Replace(dest, "콘솔", "", -1)  // 콘솔 제거
 
 		// 경유 횟수
-		layoverNumCell, _ := cjSheet.Cell(idx, layoverNumIdx)
-		layoverNum := layoverNumCell.String()
+		// layoverNumCell, _ := cjSheet.Cell(idx, layoverNumIdx)
+		// layoverNum := layoverNumCell.String()
 
 		// 차량 구분
-		carTypeCell, _ := cjSheet.Cell(idx, carTypeIdx)
-		carType := carTypeCell.String()
+		// carTypeCell, _ := cjSheet.Cell(idx, carTypeIdx)
+		// carType := carTypeCell.String()
 
 		// 비고
 		referenceCell, _ := cjSheet.Cell(idx, referenceIdx)
@@ -379,10 +379,10 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 			each.LicensePlate = licensePlate
 			each.Source = source
 			each.Destination = dest
-			layoverNumInt, err := strconv.Atoi(layoverNum)
-			if err != nil {
-				layoverNumInt = 0
-			}
+			// layoverNumInt, err := strconv.Atoi(layoverNum)
+			// if err != nil {
+			// 	layoverNumInt = 0
+			// }
 
 			if _, exists := result[*each]; !exists {
 				value := new(models.CompReturn)
