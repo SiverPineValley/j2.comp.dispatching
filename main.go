@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/tealeg/xlsx/v3"
 	"golang.org/x/text/encoding/korean"
@@ -33,11 +34,11 @@ func main() {
 	configFile = new(config.Config)
 	config.InitConfig(configFile)
 
-	j2SheetName, cjSheetName, resultFileName, parseType := getParameters()
-	// j2SheetName := "배차 내역"
-	// cjSheetName := "sheet1"
-	// resultFileName := "result.csv"
-	// parseType := "1"
+	// j2SheetName, cjSheetName, resultFileName, parseType := getParameters()
+	j2SheetName := "배차 내역"
+	cjSheetName := "sheet1"
+	resultFileName := "result2.csv"
+	parseType := "2"
 	if j2SheetName == "" || cjSheetName == "" || resultFileName == "" {
 		fmt.Println(models.InputErr)
 		return
@@ -243,6 +244,9 @@ func parseJ2Data(j2Sheet *xlsx.Sheet, parseType string) map[models.SheetComp][]s
 		// No
 		noCell, _ := j2Sheet.Cell(idx, noIdx)
 		no := noCell.String()
+		if no == "563" {
+			fmt.Println("563")
+		}
 
 		// 날짜
 		dateCell, _ := j2Sheet.Cell(idx, dateIdx)
@@ -262,9 +266,13 @@ func parseJ2Data(j2Sheet *xlsx.Sheet, parseType string) map[models.SheetComp][]s
 		referenceCell, _ := j2Sheet.Cell(idx, referenceIdx)
 		reference := referenceCell.String()
 
-		// 시프트면 하루 + 1
+		// 시프트면 하루 + 1, 토요일이면 + 2
 		if strings.Contains(reference, "시프트") {
-			date.AddDate(0, 0, 1)
+			if date.Weekday() == time.Saturday {
+				date = date.AddDate(0, 0, 2)
+			} else {
+				date = date.AddDate(0, 0, 1)
+			}
 		}
 
 		if len(slice) < 2 {
