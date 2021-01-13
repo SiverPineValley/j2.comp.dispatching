@@ -34,11 +34,11 @@ func main() {
 	configFile = new(config.Config)
 	config.InitConfig(configFile)
 
-	// j2SheetName, cjSheetName, resultFileName, parseType := getParameters()
-	j2SheetName := "배차 내역"
-	cjSheetName := "sheet1"
-	resultFileName := "result2.csv"
-	parseType := "2"
+	j2SheetName, cjSheetName, resultFileName, parseType := getParameters()
+	// j2SheetName := "배차 내역"
+	// cjSheetName := "sheet1"
+	// resultFileName := "result2.csv"
+	// parseType := "2"
 	if j2SheetName == "" || cjSheetName == "" || resultFileName == "" {
 		fmt.Println(models.InputErr)
 		return
