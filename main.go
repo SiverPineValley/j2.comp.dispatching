@@ -244,9 +244,6 @@ func parseJ2Data(j2Sheet *xlsx.Sheet, parseType string) map[models.SheetComp][]s
 		// No
 		noCell, _ := j2Sheet.Cell(idx, noIdx)
 		no := noCell.String()
-		if no == "563" {
-			fmt.Println("563")
-		}
 
 		// 날짜
 		dateCell, _ := j2Sheet.Cell(idx, dateIdx)
