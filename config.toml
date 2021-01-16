@@ -1,10 +1,10 @@
 # startIndex는 실제 데이터 탐색 시작 row 값으로, 6행부터 찾아야 하면 5라고 입력하면 됨.
 [target]
+# 노선 필터
 "1" = ["이천MP"]
 "2" = ["시흥", "수지", "안성", "단원"]
-"3" = ["수지", "안성"]
-"4" = ["단원"]
-"filter" = ["이천MP", "이그린"]
+#청구업체 필터
+"filter" = ["이천MP", "수지지점", "안성지점", "이그린", "시흥지점"]
 
 [j2]
 no = "No."
@@ -16,6 +16,17 @@ targetCompany = "청구 업체"
 startIndex = 5
 
 [cj]
+no = "NO"
+date = "출발일자"
+licensePlate = "차량번호"
+source = "출발터미널"
+destination = "도착터미널"
+layoverNum = "경유회수"
+carType = "차량구분"
+reference = "비고"
+startIndex = 1
+
+[gansun]
 no = "NO"
 date = "출발일자"
 licensePlate = "차량번호"

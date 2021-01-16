@@ -12,6 +12,7 @@ type Config struct {
 	Target map[string][]string `toml:"target"`
 	J2     ColumnTitle         `toml:"j2"`
 	Cj     ColumnTitle         `toml:"cj"`
+	Gansun ColumnTitle         `toml:"gansun"`
 	Direct map[string]string   `toml:"direct"`
 }
 
