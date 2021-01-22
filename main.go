@@ -621,14 +621,14 @@ func getParameters() (j2SheetName, cjSheetName, gansunSheetName, resultFileName,
 	j2Buf.Scan()
 	j2SheetName = j2Buf.Text()
 
-	if !cjContain {
+	if cjContain {
 		fmt.Print("CJ 파일 시트명(Default: sheet1): ")
 		cjBuf := bufio.NewScanner(os.Stdin)
 		cjBuf.Scan()
 		cjSheetName = cjBuf.Text()
 	}
 
-	if !gansunContain {
+	if gansunContain {
 		fmt.Print("간선 파일 시트명(Default: sheet1): ")
 		gansunBuf := bufio.NewScanner(os.Stdin)
 		gansunBuf.Scan()
