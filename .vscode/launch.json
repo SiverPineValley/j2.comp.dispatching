@@ -9,9 +9,9 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "D:/workspace/go/src/j2.comp.dispatching/main.go",
+            "program": "D:/workspace/go/j2.comp.dispatching/main.go",
             "env": {},
-            "args": ["j22.xlsm", "cj2.xlsx"],
+            "args": ["j2.xlsx", "0", "gansun.xlsx"],
         }
     ]
 }

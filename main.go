@@ -31,7 +31,11 @@ func main() {
 
 	j2FileName := args[0]
 	cjFileName := args[1]
-	gansunFileName := args[2]
+	gansunFileName := ""
+
+	if len(args) > 2 {
+		gansunFileName = args[2]
+	}
 
 	if cjFileName != "0" {
 		cjContain = true
@@ -45,13 +49,19 @@ func main() {
 	configFile = new(config.Config)
 	config.InitConfig(configFile)
 
-	j2SheetName, cjSheetName, gansunSheetName, resultFileName, parseType := getParameters()
+	j2SheetName, cjSheetName, gansunSheetName, resultFileName, parseType, companyFilter, errStr := getParameters()
 	// j2SheetName := "배차 내역"
 	// cjSheetName := "sheet1"
-	// resultFileName := "result2.csv"
-	// parseType := "2"
+	// gansunSheetName := "sheet1"
+	// resultFileName := "result.csv"
+	// parseType := "1"
 	if j2SheetName == "" || cjSheetName == "" || gansunSheetName == "" || resultFileName == "" {
 		fmt.Println(models.InputErr)
+		return
+	}
+
+	if errStr != "" {
+		fmt.Println(errStr)
 		return
 	}
 
@@ -106,7 +116,7 @@ func main() {
 	}
 
 	// Parse Data
-	j2Data := parseJ2Data(j2Sheet, parseType)
+	j2Data := parseJ2Data(j2Sheet, parseType, companyFilter)
 
 	// Compare Data
 	comData := compareData(j2Data, cjData, gansunData)
@@ -144,12 +154,12 @@ func writeCSVData(resultFileName string, comData []models.CompData) {
 
 	for idx, value := range comData {
 		gansun := ""
-		if value.Gansun {
+		if value.IsGansun {
 			gansun = "간선"
 		}
 
 		// 자체 No, 날짜, 차량번호, 출발, 도착, 간선
-		each := strconv.Itoa(idx) + ", " + value.Date + ", " + value.LicensePlate + ", " + value.Source + ", " + value.Destination + ", " + gansun
+		each := strconv.Itoa(idx) + "," + value.Date + "," + value.LicensePlate + "," + value.Source + "," + value.Destination + "," + gansun
 
 		// Ture, False 및 No, 비고
 		if cjContain && gansunContain {
@@ -344,7 +354,7 @@ func getCellTitle(sh *xlsx.Sheet, title []string, startIdx int) []int {
 	return res
 }
 
-func parseJ2Data(j2Sheet *xlsx.Sheet, parseType string) map[models.SheetComp][]string {
+func parseJ2Data(j2Sheet *xlsx.Sheet, parseType, companyFilter string) map[models.SheetComp][]string {
 	var j2Titles = [...]string{configFile.J2.No, configFile.J2.Date, configFile.J2.LicensePlate, configFile.J2.Route, configFile.J2.Reference, configFile.J2.TargetCompany}
 	var startIdx = configFile.J2.StartIdx
 	j2TitleIdx := getCellTitle(j2Sheet, j2Titles[:], startIdx)
@@ -362,7 +372,7 @@ func parseJ2Data(j2Sheet *xlsx.Sheet, parseType string) map[models.SheetComp][]s
 		targetCompanyCell, _ := j2Sheet.Cell(idx, targetCompanyIdx)
 		targetCompany := targetCompanyCell.String()
 
-		if value, exists := configFile.Target["filter"]; exists && len(value) > 0 && !utility.Contains(value, targetCompany) {
+		if value, exists := configFile.Company[companyFilter]; exists && len(value) > 0 && !utility.Contains(value, targetCompany) {
 			continue
 		}
 
@@ -472,18 +482,26 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 		// 출발
 		sourceCell, _ := cjSheet.Cell(idx, sourceIdx)
 		source := sourceCell.String()
-		source = strings.Replace(source, " ", "", -1)           // Trim
-		source = strings.Replace(source, "이천MP", "이천", -1)      // 이천MP -> 이천
-		source = strings.Replace(source, "이천MPHub", "이천MP", -1) // 이천MPHub -> 이천MP
-		source = strings.Replace(source, "Sub", "", -1)         // Sub 제거
-		source = strings.Replace(source, "Hub", "", -1)         // Hub 제거
-		source = strings.Replace(source, "콘솔", "", -1)          // 콘솔 제거
+		source = strings.Replace(source, " ", "", -1) // Trim
+
+		if source == "이천MP" {
+			source = strings.Replace(source, "이천MP", "이천", -1) // 이천MP -> 이천
+		}
+
+		source = strings.Replace(source, "Sub", "", -1) // Sub 제거
+		source = strings.Replace(source, "Hub", "", -1) // Hub 제거
+		source = strings.Replace(source, "콘솔", "", -1)  // 콘솔 제거
 		source = checkLayover(source)
 
 		// 도착
 		destCell, _ := cjSheet.Cell(idx, destIdx)
 		dest := destCell.String()
-		dest = strings.Replace(dest, " ", "", -1)   // Trim
+		dest = strings.Replace(dest, " ", "", -1) // Trim
+
+		if dest == "이천MP" {
+			dest = strings.Replace(dest, "이천MP", "이천", -1) // 이천MP -> 이천
+		}
+
 		dest = strings.Replace(dest, "Sub", "", -1) // Sub 제거
 		dest = strings.Replace(dest, "Hub", "", -1) // Hub 제거
 		dest = strings.Replace(dest, "콘솔", "", -1)  // 콘솔 제거
@@ -564,7 +582,12 @@ func parseGansunData(gansunSheet *xlsx.Sheet, parseType string) map[models.Sheet
 		// 출발
 		sourceCell, _ := gansunSheet.Cell(idx, sourceIdx)
 		source := sourceCell.String()
-		source = strings.Replace(source, " ", "", -1)   // Trim
+		source = strings.Replace(source, " ", "", -1) // Trim
+
+		if source == "이천MP" {
+			source = strings.Replace(source, "이천MP", "이천", -1) // 이천MP -> 이천
+		}
+
 		source = strings.Replace(source, "Sub", "", -1) // Sub 제거
 		source = strings.Replace(source, "Hub", "", -1) // Hub 제거
 		source = strings.Replace(source, "콘솔", "", -1)  // 콘솔 제거
@@ -573,12 +596,15 @@ func parseGansunData(gansunSheet *xlsx.Sheet, parseType string) map[models.Sheet
 		// 도착
 		destCell, _ := gansunSheet.Cell(idx, destIdx)
 		dest := destCell.String()
-		dest = strings.Replace(dest, " ", "", -1)           // Trim
-		dest = strings.Replace(dest, "이천MP", "이천", -1)      // 이천MP -> 이천
-		dest = strings.Replace(dest, "이천MPHub", "이천MP", -1) // 이천MPHub -> 이천MP
-		dest = strings.Replace(dest, "Sub", "", -1)         // Sub 제거
-		dest = strings.Replace(dest, "Hub", "", -1)         // Hub 제거
-		dest = strings.Replace(dest, "콘솔", "", -1)          // 콘솔 제거
+		dest = strings.Replace(dest, " ", "", -1) // Trim
+
+		if dest == "이천MP" {
+			dest = strings.Replace(dest, "이천MP", "이천", -1) // 이천MP -> 이천
+		}
+
+		dest = strings.Replace(dest, "Sub", "", -1) // Sub 제거
+		dest = strings.Replace(dest, "Hub", "", -1) // Hub 제거
+		dest = strings.Replace(dest, "콘솔", "", -1)  // 콘솔 제거
 
 		// 비고
 		referenceCell, _ := gansunSheet.Cell(idx, referenceIdx)
@@ -595,8 +621,8 @@ func parseGansunData(gansunSheet *xlsx.Sheet, parseType string) map[models.Sheet
 			each := new(models.SheetComp)
 			each.Date = date.String()
 			each.LicensePlate = licensePlate
-			each.Source = dest
-			each.Destination = source
+			each.Source = source
+			each.Destination = dest
 			each.Gansun = true
 
 			if _, exists := result[*each]; !exists {
@@ -615,7 +641,7 @@ func parseGansunData(gansunSheet *xlsx.Sheet, parseType string) map[models.Sheet
 
 }
 
-func getParameters() (j2SheetName, cjSheetName, gansunSheetName, resultFileName, resultType string) {
+func getParameters() (j2SheetName, cjSheetName, gansunSheetName, resultFileName, resultType, companyFilter, errCode string) {
 	fmt.Print("J2 파일 시트명(Default: sheet1): ")
 	j2Buf := bufio.NewScanner(os.Stdin)
 	j2Buf.Scan()
@@ -640,8 +666,11 @@ func getParameters() (j2SheetName, cjSheetName, gansunSheetName, resultFileName,
 	resBuf.Scan()
 	resultFileName = resBuf.Text()
 
-	fmt.Print("파싱 타켓(TOML파일 target): ")
+	fmt.Print("노선 필터(TOML파일 target): ")
 	fmt.Scanln(&resultType)
+
+	fmt.Print("업체 필터(TOML파일 company): ")
+	fmt.Scanln(&companyFilter)
 
 	if j2SheetName == "" {
 		j2SheetName = "sheet1"
@@ -661,6 +690,10 @@ func getParameters() (j2SheetName, cjSheetName, gansunSheetName, resultFileName,
 
 	if _, exists := configFile.Target[resultType]; !exists {
 		resultType = "1"
+	}
+
+	if _, exists := configFile.Company[companyFilter]; !exists {
+		errCode = models.InvalidCompany
 	}
 
 	return
