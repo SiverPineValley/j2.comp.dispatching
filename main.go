@@ -417,8 +417,9 @@ func parseJ2Data(j2Sheet *xlsx.Sheet, parseType, companyFilter string) map[model
 		if strings.Contains(dest, "간선") {
 			isGansun = true
 		}
-		dest = strings.Replace(dest, "간선", "", -1)        // 간선 제거
+		dest = strings.Replace(dest, "간선편도대체", "", -1)    // 간선편도대체 제거
 		dest = strings.Replace(dest, "간선대체", "", -1)      // 간선대체 제거
+		dest = strings.Replace(dest, "간선", "", -1)        // 간선 제거
 		sliceLayover := strings.Split(sourceLayover, "/") // Split Layover
 		source := sliceLayover[0]
 		source = checkLayover(source)
@@ -482,12 +483,7 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 		// 출발
 		sourceCell, _ := cjSheet.Cell(idx, sourceIdx)
 		source := sourceCell.String()
-		source = strings.Replace(source, " ", "", -1) // Trim
-
-		if source == "이천MP" {
-			source = strings.Replace(source, "이천MP", "이천", -1) // 이천MP -> 이천
-		}
-
+		source = strings.Replace(source, " ", "", -1)   // Trim
 		source = strings.Replace(source, "Sub", "", -1) // Sub 제거
 		source = strings.Replace(source, "Hub", "", -1) // Hub 제거
 		source = strings.Replace(source, "콘솔", "", -1)  // 콘솔 제거
@@ -496,12 +492,7 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 		// 도착
 		destCell, _ := cjSheet.Cell(idx, destIdx)
 		dest := destCell.String()
-		dest = strings.Replace(dest, " ", "", -1) // Trim
-
-		if dest == "이천MP" {
-			dest = strings.Replace(dest, "이천MP", "이천", -1) // 이천MP -> 이천
-		}
-
+		dest = strings.Replace(dest, " ", "", -1)   // Trim
 		dest = strings.Replace(dest, "Sub", "", -1) // Sub 제거
 		dest = strings.Replace(dest, "Hub", "", -1) // Hub 제거
 		dest = strings.Replace(dest, "콘솔", "", -1)  // 콘솔 제거
@@ -596,12 +587,7 @@ func parseGansunData(gansunSheet *xlsx.Sheet, parseType string) map[models.Sheet
 		// 도착
 		destCell, _ := gansunSheet.Cell(idx, destIdx)
 		dest := destCell.String()
-		dest = strings.Replace(dest, " ", "", -1) // Trim
-
-		if dest == "이천MP" {
-			dest = strings.Replace(dest, "이천MP", "이천", -1) // 이천MP -> 이천
-		}
-
+		dest = strings.Replace(dest, " ", "", -1)   // Trim
 		dest = strings.Replace(dest, "Sub", "", -1) // Sub 제거
 		dest = strings.Replace(dest, "Hub", "", -1) // Hub 제거
 		dest = strings.Replace(dest, "콘솔", "", -1)  // 콘솔 제거
