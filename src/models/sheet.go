@@ -20,16 +20,17 @@ type CompReturn struct {
 }
 
 type CompData struct {
-	Date         string
-	LicensePlate string
-	Source       string
-	Destination  string
-	IsGansun     bool
-	Reference    []string
-	J2No         []string
-	CJNo         []string
-	GansunNo     []string
-	J2           bool
-	CJ           bool
-	Gansun       bool
+	Date           string
+	LicensePlate   string
+	Source         string
+	Destination    string
+	IsGansun       bool
+	IsGansunOneway bool
+	Reference      []string
+	J2No           []string
+	CJNo           []string
+	GansunNo       []string
+	J2             bool
+	CJ             bool
+	Gansun         bool
 }

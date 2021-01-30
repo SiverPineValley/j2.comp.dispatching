@@ -157,8 +157,10 @@ func writeCSVData(resultFileName string, comData []models.CompData) {
 
 	for idx, value := range comData {
 		gansun := ""
-		if value.IsGansun {
-			gansun = "간선"
+		if value.IsGansun && value.IsGansunOneway {
+			gansun = "간선편도"
+		} else if value.IsGansun && !value.IsGansunOneway {
+			gansun = "고정간선"
 		}
 
 		// 자체 No, 날짜, 차량번호, 출발, 도착, 간선
@@ -233,17 +235,18 @@ func compareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 			continue
 		} else {
 			result = append(result, models.CompData{
-				Date:         key.Date,
-				LicensePlate: key.LicensePlate,
-				Source:       key.Source,
-				Destination:  key.Destination,
-				IsGansun:     key.Gansun,
-				J2No:         value.Idx,
-				CJNo:         cjValue.Idx,
-				Reference:    cjValue.Reference,
-				J2:           true,
-				CJ:           true,
-				Gansun:       false})
+				Date:           key.Date,
+				LicensePlate:   key.LicensePlate,
+				Source:         key.Source,
+				Destination:    key.Destination,
+				IsGansun:       false,
+				IsGansunOneway: false,
+				J2No:           value.Idx,
+				CJNo:           cjValue.Idx,
+				Reference:      cjValue.Reference,
+				J2:             true,
+				CJ:             true,
+				Gansun:         false})
 			delete(j2Data, key)
 			delete(cjData, key)
 			continue
@@ -255,16 +258,17 @@ func compareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 		// J2에만 있으면 J2만 있다고 추가
 		if !exists {
 			result = append(result, models.CompData{
-				Date:         key.Date,
-				LicensePlate: key.LicensePlate,
-				Source:       key.Source,
-				Destination:  key.Destination,
-				IsGansun:     key.Gansun,
-				J2No:         value.Idx,
-				Reference:    value.Reference,
-				J2:           true,
-				CJ:           false,
-				Gansun:       false})
+				Date:           key.Date,
+				LicensePlate:   key.LicensePlate,
+				Source:         key.Source,
+				Destination:    key.Destination,
+				IsGansun:       key.Gansun,
+				IsGansunOneway: key.GansunOneWay,
+				J2No:           value.Idx,
+				Reference:      value.Reference,
+				J2:             true,
+				CJ:             false,
+				Gansun:         false})
 			delete(j2Data, key)
 			continue
 		}
@@ -277,17 +281,18 @@ func compareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 			continue
 		} else {
 			result = append(result, models.CompData{
-				Date:         key.Date,
-				LicensePlate: key.LicensePlate,
-				Source:       key.Source,
-				Destination:  key.Destination,
-				IsGansun:     key.Gansun,
-				J2No:         value.Idx,
-				GansunNo:     gansunValue.Idx,
-				Reference:    gansunValue.Reference,
-				J2:           true,
-				CJ:           false,
-				Gansun:       true})
+				Date:           key.Date,
+				LicensePlate:   key.LicensePlate,
+				Source:         key.Source,
+				Destination:    key.Destination,
+				IsGansun:       key.Gansun,
+				IsGansunOneway: key.GansunOneWay,
+				J2No:           value.Idx,
+				GansunNo:       gansunValue.Idx,
+				Reference:      gansunValue.Reference,
+				J2:             true,
+				CJ:             false,
+				Gansun:         true})
 			delete(j2Data, key)
 			delete(gansunData, key)
 			continue
@@ -297,46 +302,49 @@ func compareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 	// J2에만 있는 녀석
 	for key, value := range j2Data {
 		result = append(result, models.CompData{
-			Date:         key.Date,
-			LicensePlate: key.LicensePlate,
-			Source:       key.Source,
-			Destination:  key.Destination,
-			IsGansun:     key.Gansun,
-			J2No:         value.Idx,
-			Reference:    value.Reference,
-			J2:           true,
-			CJ:           false,
-			Gansun:       false})
+			Date:           key.Date,
+			LicensePlate:   key.LicensePlate,
+			Source:         key.Source,
+			Destination:    key.Destination,
+			IsGansun:       key.Gansun,
+			IsGansunOneway: key.GansunOneWay,
+			J2No:           value.Idx,
+			Reference:      value.Reference,
+			J2:             true,
+			CJ:             false,
+			Gansun:         false})
 	}
 
 	// CJ에만 있는 녀석
 	for key, value := range cjData {
 		result = append(result, models.CompData{
-			Date:         key.Date,
-			LicensePlate: key.LicensePlate,
-			Source:       key.Source,
-			Destination:  key.Destination,
-			IsGansun:     key.Gansun,
-			CJNo:         value.Idx,
-			Reference:    value.Reference,
-			J2:           false,
-			CJ:           true,
-			Gansun:       false})
+			Date:           key.Date,
+			LicensePlate:   key.LicensePlate,
+			Source:         key.Source,
+			Destination:    key.Destination,
+			IsGansun:       false,
+			IsGansunOneway: false,
+			CJNo:           value.Idx,
+			Reference:      value.Reference,
+			J2:             false,
+			CJ:             true,
+			Gansun:         false})
 	}
 
 	// 간선에만 있는 녀석
 	for key, value := range gansunData {
 		result = append(result, models.CompData{
-			Date:         key.Date,
-			LicensePlate: key.LicensePlate,
-			Source:       key.Source,
-			Destination:  key.Destination,
-			IsGansun:     key.Gansun,
-			GansunNo:     value.Idx,
-			Reference:    value.Reference,
-			J2:           false,
-			CJ:           false,
-			Gansun:       true})
+			Date:           key.Date,
+			LicensePlate:   key.LicensePlate,
+			Source:         key.Source,
+			Destination:    key.Destination,
+			IsGansun:       key.Gansun,
+			IsGansunOneway: key.GansunOneWay,
+			GansunNo:       value.Idx,
+			Reference:      value.Reference,
+			J2:             false,
+			CJ:             false,
+			Gansun:         true})
 	}
 
 	return
