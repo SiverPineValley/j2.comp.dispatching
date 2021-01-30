@@ -32,6 +32,11 @@ type ColumnTitle struct {
 	StartIdx      int    `toml:"startIndex"`
 }
 
+// Gansun is gansun route - company filtering config
+type Gansun struct {
+	Route map[string][][]string `toml:"route"`
+}
+
 // getColumnName is parsing function about config.toml.
 func getColumnName(config *Config) {
 	_, err := toml.DecodeFile("config.toml", &config)
@@ -45,5 +50,15 @@ func getColumnName(config *Config) {
 // InitConfig is config Initalization funciton.
 func InitConfig(config *Config) {
 	getColumnName(config)
+	return
+}
+
+// InitGansun is gansun config Initalization funciton.
+func InitGansun(gansun *Gansun) {
+	_, err := toml.DecodeFile("gansun.toml", &gansun)
+	if err != nil {
+		fmt.Println(models.InvalidTomlErr)
+		return
+	}
 	return
 }

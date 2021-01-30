@@ -18,6 +18,7 @@ import (
 )
 
 var configFile *config.Config
+var gansunFile *config.Gansun
 var cjContain bool = false
 var gansunContain bool = false
 
@@ -47,7 +48,9 @@ func main() {
 
 	// Init Config
 	configFile = new(config.Config)
+	gansunFile = new(config.Gansun)
 	config.InitConfig(configFile)
+	config.InitGansun(gansunFile)
 
 	j2SheetName, cjSheetName, gansunSheetName, resultFileName, parseType, companyFilter, errStr := getParameters()
 	// j2SheetName := "배차 내역"
@@ -229,7 +232,6 @@ func compareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 			delete(cjData, key)
 			continue
 		} else {
-			ref := append(cjValue.Reference, value.Reference...)
 			result = append(result, models.CompData{
 				Date:         key.Date,
 				LicensePlate: key.LicensePlate,
@@ -238,7 +240,7 @@ func compareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 				IsGansun:     key.Gansun,
 				J2No:         value.Idx,
 				CJNo:         cjValue.Idx,
-				Reference:    ref,
+				Reference:    cjValue.Reference,
 				J2:           true,
 				CJ:           true,
 				Gansun:       false})
@@ -274,7 +276,6 @@ func compareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 			delete(gansunData, key)
 			continue
 		} else {
-			ref := append(gansunValue.Reference, value.Reference...)
 			result = append(result, models.CompData{
 				Date:         key.Date,
 				LicensePlate: key.LicensePlate,
@@ -283,7 +284,7 @@ func compareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 				IsGansun:     key.Gansun,
 				J2No:         value.Idx,
 				GansunNo:     gansunValue.Idx,
-				Reference:    ref,
+				Reference:    gansunValue.Reference,
 				J2:           true,
 				CJ:           false,
 				Gansun:       true})
@@ -469,6 +470,18 @@ func parseJ2Data(j2Sheet *xlsx.Sheet, parseType, companyFilter string) map[model
 			value := result[*each]
 			value.Idx = append(value.Idx, no)
 			value.Reference = append(value.Reference, reference)
+
+			// 간선일때
+			if isGansun {
+				// 특정 경로이고
+				if each, exists := gansunFile.Route[source]; exists && utility.Contains(each[0], dest) {
+					// 청구업체가 틀리면 기록
+					if targetCompany != each[1][0] {
+						value.Reference = append(value.Reference, "간선 청구업체 오류: "+targetCompany+" 예상: "+each[1][0])
+					}
+				}
+			}
+
 			result[*each] = value
 		}
 	}
