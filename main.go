@@ -148,11 +148,11 @@ func writeCSVData(resultFileName string, comData []models.CompData) {
 
 	// Comp 내용 쓰기
 	if cjContain && gansunContain {
-		resWr.Write([]byte("NO, 날짜, 차량번호, 출발, 도착, 간선, J2, CJ, Gansun, J2_NO, CJ_NO, Gansun_No, 비고\n"))
+		resWr.Write([]byte("NO, 날짜, 차량번호, 샤시번호, 출발, 도착, 간선, J2, CJ, Gansun, J2_NO, CJ_NO, Gansun_No, 비고\n"))
 	} else if cjContain && !gansunContain {
-		resWr.Write([]byte("NO, 날짜, 차량번호, 출발, 도착, 간선, J2, CJ, J2_NO, CJ_NO, 비고\n"))
+		resWr.Write([]byte("NO, 날짜, 차량번호, 샤시번호, 출발, 도착, 간선, J2, CJ, J2_NO, CJ_NO, 비고\n"))
 	} else if !cjContain && gansunContain {
-		resWr.Write([]byte("NO, 날짜, 차량번호, 출발, 도착, 간선, J2, Gansun, J2_NO, Gansun_No, 비고\n"))
+		resWr.Write([]byte("NO, 날짜, 차량번호, 샤시번호, 출발, 도착, 간선, J2, Gansun, J2_NO, Gansun_No, 비고\n"))
 	}
 
 	for idx, value := range comData {
@@ -164,7 +164,7 @@ func writeCSVData(resultFileName string, comData []models.CompData) {
 		}
 
 		// 자체 No, 날짜, 차량번호, 출발, 도착, 간선
-		each := strconv.Itoa(idx) + "," + value.Date + "," + value.LicensePlate + "," + value.Source + "," + value.Destination + "," + gansun
+		each := strconv.Itoa(idx) + "," + value.Date + "," + value.LicensePlate + "," + getArrayData(value.TrailerPlate, " ") + "," + value.Source + "," + value.Destination + "," + gansun
 
 		// Ture, False 및 No, 비고
 		if cjContain && gansunContain {
@@ -244,6 +244,7 @@ func compareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 				J2No:           value.Idx,
 				CJNo:           cjValue.Idx,
 				Reference:      cjValue.Reference,
+				TrailerPlate:   cjValue.TrailerPlate,
 				J2:             true,
 				CJ:             true,
 				Gansun:         false})
@@ -290,6 +291,7 @@ func compareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 				J2No:           value.Idx,
 				GansunNo:       gansunValue.Idx,
 				Reference:      gansunValue.Reference,
+				TrailerPlate:   gansunValue.TrailerPlate,
 				J2:             true,
 				CJ:             false,
 				Gansun:         true})
@@ -326,6 +328,7 @@ func compareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 			IsGansunOneway: false,
 			CJNo:           value.Idx,
 			Reference:      value.Reference,
+			TrailerPlate:   value.TrailerPlate,
 			J2:             false,
 			CJ:             true,
 			Gansun:         false})
@@ -342,6 +345,7 @@ func compareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 			IsGansunOneway: key.GansunOneWay,
 			GansunNo:       value.Idx,
 			Reference:      value.Reference,
+			TrailerPlate:   value.TrailerPlate,
 			J2:             false,
 			CJ:             false,
 			Gansun:         true})
@@ -498,7 +502,7 @@ func parseJ2Data(j2Sheet *xlsx.Sheet, parseType, companyFilter string) map[model
 }
 
 func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]models.CompReturn {
-	var cjTitles = [...]string{configFile.Cj.No, configFile.Cj.Date, configFile.Cj.LicensePlate, configFile.Cj.Source, configFile.Cj.Destination, configFile.Cj.Reference} // configFile.Cj.LayoverNum, configFile.Cj.CarType}
+	var cjTitles = [...]string{configFile.Cj.No, configFile.Cj.Date, configFile.Cj.LicensePlate, configFile.Cj.Source, configFile.Cj.Destination, configFile.Cj.Reference, configFile.Cj.TrailerPlate} // configFile.Cj.TrailerPlate, configFile.Cj.CarType}
 	cjTitleIdx := getCellTitle(cjSheet, cjTitles[:], 0)
 	var startIdx = configFile.Cj.StartIdx
 
@@ -508,6 +512,7 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 	sourceIdx := cjTitleIdx[3]
 	destIdx := cjTitleIdx[4]
 	referenceIdx := cjTitleIdx[5]
+	trailerIdx := cjTitleIdx[6]
 
 	result := make(map[models.SheetComp]models.CompReturn)
 	for idx := 0 + startIdx; idx < cjSheet.MaxRow; idx++ {
@@ -522,6 +527,10 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 		// 차량번호
 		licenseCell, _ := cjSheet.Cell(idx, licenceIdx)
 		licensePlate := licenseCell.String()
+
+		// 트레일러 번호
+		trailerCell, _ := cjSheet.Cell(idx, trailerIdx)
+		trailerPlate := trailerCell.String()
 
 		// 출발
 		sourceCell, _ := cjSheet.Cell(idx, sourceIdx)
@@ -568,6 +577,11 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 			value := result[*each]
 			value.Idx = append(value.Idx, no)
 			value.Reference = append(value.Reference, reference)
+
+			if licensePlate[6:8] == "98" || licensePlate[6:8] == "99" {
+				value.TrailerPlate = append(value.TrailerPlate, trailerPlate)
+			}
+
 			result[*each] = value
 		}
 	}
@@ -577,7 +591,7 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 }
 
 func parseGansunData(gansunSheet *xlsx.Sheet, parseType string) map[models.SheetComp]models.CompReturn {
-	var gansunTitles = [...]string{configFile.Gansun.No, configFile.Gansun.Date, configFile.Gansun.LicensePlate, configFile.Gansun.Source, configFile.Gansun.Destination, configFile.Gansun.Reference, configFile.Cj.CarType}
+	var gansunTitles = [...]string{configFile.Gansun.No, configFile.Gansun.Date, configFile.Gansun.LicensePlate, configFile.Gansun.Source, configFile.Gansun.Destination, configFile.Gansun.Reference, configFile.Gansun.CarType, configFile.Gansun.TrailerPlate}
 	gansunTitleIdx := getCellTitle(gansunSheet, gansunTitles[:], 0)
 	var startIdx = configFile.Gansun.StartIdx
 
@@ -588,6 +602,7 @@ func parseGansunData(gansunSheet *xlsx.Sheet, parseType string) map[models.Sheet
 	destIdx := gansunTitleIdx[4]
 	referenceIdx := gansunTitleIdx[5]
 	carTypeIdx := gansunTitleIdx[6]
+	trailerIdx := gansunTitleIdx[7]
 
 	result := make(map[models.SheetComp]models.CompReturn)
 	for idx := 0 + startIdx; idx < gansunSheet.MaxRow; idx++ {
@@ -602,6 +617,10 @@ func parseGansunData(gansunSheet *xlsx.Sheet, parseType string) map[models.Sheet
 		// 차량번호
 		licenseCell, _ := gansunSheet.Cell(idx, licenceIdx)
 		licensePlate := licenseCell.String()
+
+		// 트레일러 번호
+		trailerCell, _ := gansunSheet.Cell(idx, trailerIdx)
+		trailerPlate := trailerCell.String()
 
 		// 출발
 		sourceCell, _ := gansunSheet.Cell(idx, sourceIdx)
@@ -661,6 +680,11 @@ func parseGansunData(gansunSheet *xlsx.Sheet, parseType string) map[models.Sheet
 			value := result[*each]
 			value.Idx = append(value.Idx, no)
 			value.Reference = append(value.Reference, reference)
+
+			if licensePlate[6:8] == "98" || licensePlate[6:8] == "99" {
+				value.TrailerPlate = append(value.TrailerPlate, trailerPlate)
+			}
+
 			result[*each] = value
 		}
 	}
