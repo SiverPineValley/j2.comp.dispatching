@@ -11,6 +11,7 @@ type SheetComp struct {
 	Source       string
 	Destination  string
 	Gansun       bool
+	GansunOneWay bool
 }
 
 type CompReturn struct {

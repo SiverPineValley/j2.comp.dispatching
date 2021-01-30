@@ -414,12 +414,23 @@ func parseJ2Data(j2Sheet *xlsx.Sheet, parseType, companyFilter string) map[model
 		sourceLayover := slice[0]
 		dest := slice[1]
 		isGansun := false
+		isGansunOneway := false
+		// 간선편도
+		if strings.Contains(dest, "간선편도") {
+			isGansun = true
+			isGansunOneway = true
+			dest = strings.Replace(dest, "간선편도대체", "", -1) // 간선편도대체 제거
+			dest = strings.Replace(dest, "간선편도", "", -1)   // 간선편도 제거
+		}
+
+		// 고정간선
 		if strings.Contains(dest, "간선") {
 			isGansun = true
+			isGansunOneway = false
+			dest = strings.Replace(dest, "간선대체", "", -1) // 간선대체 제거
+			dest = strings.Replace(dest, "간선", "", -1)   // 간선 제거
 		}
-		dest = strings.Replace(dest, "간선편도대체", "", -1)    // 간선편도대체 제거
-		dest = strings.Replace(dest, "간선대체", "", -1)      // 간선대체 제거
-		dest = strings.Replace(dest, "간선", "", -1)        // 간선 제거
+
 		sliceLayover := strings.Split(sourceLayover, "/") // Split Layover
 		source := sliceLayover[0]
 		source = checkLayover(source)
@@ -440,6 +451,7 @@ func parseJ2Data(j2Sheet *xlsx.Sheet, parseType, companyFilter string) map[model
 			each.Source = source
 			each.Destination = dest
 			each.Gansun = isGansun
+			each.GansunOneWay = isGansunOneway
 
 			if _, exists := result[*each]; !exists {
 				result[*each] = make([]string, 0)
@@ -462,8 +474,6 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 	licenceIdx := cjTitleIdx[2]
 	sourceIdx := cjTitleIdx[3]
 	destIdx := cjTitleIdx[4]
-	// layoverNumIdx := cjTitleIdx[5]
-	// carTypeIdx := cjTitleIdx[6]
 	referenceIdx := cjTitleIdx[5]
 
 	result := make(map[models.SheetComp]models.CompReturn)
@@ -497,14 +507,6 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 		dest = strings.Replace(dest, "Hub", "", -1) // Hub 제거
 		dest = strings.Replace(dest, "콘솔", "", -1)  // 콘솔 제거
 
-		// 경유 횟수
-		// layoverNumCell, _ := cjSheet.Cell(idx, layoverNumIdx)
-		// layoverNum := layoverNumCell.String()
-
-		// 차량 구분
-		// carTypeCell, _ := cjSheet.Cell(idx, carTypeIdx)
-		// carType := carTypeCell.String()
-
 		// 비고
 		referenceCell, _ := cjSheet.Cell(idx, referenceIdx)
 		reference := referenceCell.String()
@@ -523,10 +525,7 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 			each.Source = source
 			each.Destination = dest
 			each.Gansun = false
-			// layoverNumInt, err := strconv.Atoi(layoverNum)
-			// if err != nil {
-			// 	layoverNumInt = 0
-			// }
+			each.GansunOneWay = false
 
 			if _, exists := result[*each]; !exists {
 				value := new(models.CompReturn)
@@ -545,7 +544,7 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 }
 
 func parseGansunData(gansunSheet *xlsx.Sheet, parseType string) map[models.SheetComp]models.CompReturn {
-	var gansunTitles = [...]string{configFile.Gansun.No, configFile.Gansun.Date, configFile.Gansun.LicensePlate, configFile.Gansun.Source, configFile.Gansun.Destination, configFile.Gansun.Reference}
+	var gansunTitles = [...]string{configFile.Gansun.No, configFile.Gansun.Date, configFile.Gansun.LicensePlate, configFile.Gansun.Source, configFile.Gansun.Destination, configFile.Gansun.Reference, configFile.Cj.CarType}
 	gansunTitleIdx := getCellTitle(gansunSheet, gansunTitles[:], 0)
 	var startIdx = configFile.Gansun.StartIdx
 
@@ -555,6 +554,7 @@ func parseGansunData(gansunSheet *xlsx.Sheet, parseType string) map[models.Sheet
 	sourceIdx := gansunTitleIdx[3]
 	destIdx := gansunTitleIdx[4]
 	referenceIdx := gansunTitleIdx[5]
+	carTypeIdx := gansunTitleIdx[6]
 
 	result := make(map[models.SheetComp]models.CompReturn)
 	for idx := 0 + startIdx; idx < gansunSheet.MaxRow; idx++ {
@@ -592,6 +592,14 @@ func parseGansunData(gansunSheet *xlsx.Sheet, parseType string) map[models.Sheet
 		dest = strings.Replace(dest, "Hub", "", -1) // Hub 제거
 		dest = strings.Replace(dest, "콘솔", "", -1)  // 콘솔 제거
 
+		// 차량 구분
+		carTypeCell, _ := gansunSheet.Cell(idx, carTypeIdx)
+		carType := carTypeCell.String()
+		isGansunOneway := false
+		if strings.Contains(carType, "간선편도") {
+			isGansunOneway = true
+		}
+
 		// 비고
 		referenceCell, _ := gansunSheet.Cell(idx, referenceIdx)
 		reference := referenceCell.String()
@@ -610,6 +618,7 @@ func parseGansunData(gansunSheet *xlsx.Sheet, parseType string) map[models.Sheet
 			each.Source = source
 			each.Destination = dest
 			each.Gansun = true
+			each.GansunOneWay = isGansunOneway
 
 			if _, exists := result[*each]; !exists {
 				value := new(models.CompReturn)
