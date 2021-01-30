@@ -213,7 +213,7 @@ func getArrayData(arr []string, split string) string {
 	return no
 }
 
-func compareData(j2Data map[models.SheetComp][]string, cjData, gansunData map[models.SheetComp]models.CompReturn) (result []models.CompData) {
+func compareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompReturn) (result []models.CompData) {
 	result = make([]models.CompData, 0)
 	for key, value := range j2Data {
 		cjValue, exists := cjData[key]
@@ -224,20 +224,21 @@ func compareData(j2Data map[models.SheetComp][]string, cjData, gansunData map[mo
 
 		// 둘다 있고 개수 동일하면 둘다 추가 X
 		// 개수 다르면 둘다 추가 O
-		if len(value) == len(cjValue.Idx) {
+		if len(value.Idx) == len(cjValue.Idx) {
 			delete(j2Data, key)
 			delete(cjData, key)
 			continue
 		} else {
+			ref := append(cjValue.Reference, value.Reference...)
 			result = append(result, models.CompData{
 				Date:         key.Date,
 				LicensePlate: key.LicensePlate,
 				Source:       key.Source,
 				Destination:  key.Destination,
 				IsGansun:     key.Gansun,
-				J2No:         value,
+				J2No:         value.Idx,
 				CJNo:         cjValue.Idx,
-				Reference:    cjValue.Reference,
+				Reference:    ref,
 				J2:           true,
 				CJ:           true,
 				Gansun:       false})
@@ -257,7 +258,8 @@ func compareData(j2Data map[models.SheetComp][]string, cjData, gansunData map[mo
 				Source:       key.Source,
 				Destination:  key.Destination,
 				IsGansun:     key.Gansun,
-				J2No:         value,
+				J2No:         value.Idx,
+				Reference:    value.Reference,
 				J2:           true,
 				CJ:           false,
 				Gansun:       false})
@@ -267,20 +269,21 @@ func compareData(j2Data map[models.SheetComp][]string, cjData, gansunData map[mo
 
 		// 둘다 있고 개수 동일하면 둘다 추가 X
 		// 개수 다르면 둘다 추가 O
-		if len(value) == len(gansunValue.Idx) {
+		if len(value.Idx) == len(gansunValue.Idx) {
 			delete(j2Data, key)
 			delete(gansunData, key)
 			continue
 		} else {
+			ref := append(gansunValue.Reference, value.Reference...)
 			result = append(result, models.CompData{
 				Date:         key.Date,
 				LicensePlate: key.LicensePlate,
 				Source:       key.Source,
 				Destination:  key.Destination,
 				IsGansun:     key.Gansun,
-				J2No:         value,
+				J2No:         value.Idx,
 				GansunNo:     gansunValue.Idx,
-				Reference:    gansunValue.Reference,
+				Reference:    ref,
 				J2:           true,
 				CJ:           false,
 				Gansun:       true})
@@ -298,7 +301,8 @@ func compareData(j2Data map[models.SheetComp][]string, cjData, gansunData map[mo
 			Source:       key.Source,
 			Destination:  key.Destination,
 			IsGansun:     key.Gansun,
-			J2No:         value,
+			J2No:         value.Idx,
+			Reference:    value.Reference,
 			J2:           true,
 			CJ:           false,
 			Gansun:       false})
@@ -354,7 +358,7 @@ func getCellTitle(sh *xlsx.Sheet, title []string, startIdx int) []int {
 	return res
 }
 
-func parseJ2Data(j2Sheet *xlsx.Sheet, parseType, companyFilter string) map[models.SheetComp][]string {
+func parseJ2Data(j2Sheet *xlsx.Sheet, parseType, companyFilter string) map[models.SheetComp]models.CompReturn {
 	var j2Titles = [...]string{configFile.J2.No, configFile.J2.Date, configFile.J2.LicensePlate, configFile.J2.Route, configFile.J2.Reference, configFile.J2.TargetCompany}
 	var startIdx = configFile.J2.StartIdx
 	j2TitleIdx := getCellTitle(j2Sheet, j2Titles[:], startIdx)
@@ -366,7 +370,7 @@ func parseJ2Data(j2Sheet *xlsx.Sheet, parseType, companyFilter string) map[model
 	referenceIdx := j2TitleIdx[4]
 	targetCompanyIdx := j2TitleIdx[5]
 
-	result := make(map[models.SheetComp][]string)
+	result := make(map[models.SheetComp]models.CompReturn)
 	for idx := 0 + startIdx + 1; idx < j2Sheet.MaxRow; idx++ {
 		// 청구업체
 		targetCompanyCell, _ := j2Sheet.Cell(idx, targetCompanyIdx)
@@ -405,6 +409,10 @@ func parseJ2Data(j2Sheet *xlsx.Sheet, parseType, companyFilter string) map[model
 			} else {
 				date = date.AddDate(0, 0, 1)
 			}
+		}
+
+		if strings.Contains(reference, ",") {
+			reference = "\"" + reference + "\""
 		}
 
 		if len(slice) < 2 {
@@ -454,10 +462,14 @@ func parseJ2Data(j2Sheet *xlsx.Sheet, parseType, companyFilter string) map[model
 			each.GansunOneWay = isGansunOneway
 
 			if _, exists := result[*each]; !exists {
-				result[*each] = make([]string, 0)
+				value := new(models.CompReturn)
+				result[*each] = *value
 			}
 
-			result[*each] = append(result[*each], no)
+			value := result[*each]
+			value.Idx = append(value.Idx, no)
+			value.Reference = append(value.Reference, reference)
+			result[*each] = value
 		}
 	}
 
