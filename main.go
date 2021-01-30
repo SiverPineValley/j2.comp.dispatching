@@ -415,19 +415,6 @@ func parseJ2Data(j2Sheet *xlsx.Sheet, parseType, companyFilter string) map[model
 		referenceCell, _ := j2Sheet.Cell(idx, referenceIdx)
 		reference := referenceCell.String()
 
-		// 시프트면 하루 + 1, 토요일이면 + 2
-		if strings.Contains(reference, "시프트") {
-			if date.Weekday() == time.Saturday {
-				date = date.AddDate(0, 0, 2)
-			} else {
-				date = date.AddDate(0, 0, 1)
-			}
-		}
-
-		if strings.Contains(reference, ",") {
-			reference = "\"" + reference + "\""
-		}
-
 		if len(slice) < 2 {
 			continue
 		}
@@ -455,6 +442,19 @@ func parseJ2Data(j2Sheet *xlsx.Sheet, parseType, companyFilter string) map[model
 		sliceLayover := strings.Split(sourceLayover, "/") // Split Layover
 		source := sliceLayover[0]
 		source = checkLayover(source)
+
+		// 시프트면 하루 + 1, 토요일이면 + 2
+		if strings.Contains(reference, "시프트") && !isGansun {
+			if date.Weekday() == time.Saturday {
+				date = date.AddDate(0, 0, 2)
+			} else {
+				date = date.AddDate(0, 0, 1)
+			}
+		}
+
+		if strings.Contains(reference, ",") {
+			reference = "\"" + reference + "\""
+		}
 
 		if no == "" && date.String() == "" && licensePlate == "" && source == "" && dest == "" {
 			break
