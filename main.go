@@ -648,7 +648,7 @@ func parseGansunData(gansunSheet *xlsx.Sheet, parseType string) map[models.Sheet
 		carTypeCell, _ := gansunSheet.Cell(idx, carTypeIdx)
 		carType := carTypeCell.String()
 		isGansunOneway := false
-		if strings.Contains(carType, "간선편도") {
+		if strings.Contains(carType, "편도") {
 			isGansunOneway = true
 		}
 
