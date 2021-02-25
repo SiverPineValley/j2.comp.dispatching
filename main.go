@@ -548,6 +548,7 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 		dest = strings.Replace(dest, "Sub", "", -1) // Sub 제거
 		dest = strings.Replace(dest, "Hub", "", -1) // Hub 제거
 		dest = strings.Replace(dest, "콘솔", "", -1)  // 콘솔 제거
+		dest = strings.Replace(dest, "지역", "", -1)  // 지역 제거
 
 		// 비고
 		referenceCell, _ := cjSheet.Cell(idx, referenceIdx)
