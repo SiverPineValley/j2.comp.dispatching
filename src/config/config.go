@@ -22,7 +22,6 @@ type ColumnTitle struct {
 	No            string `toml:"no"`
 	Date          string `toml:"date"`
 	LicensePlate  string `toml:"licensePlate"`
-	TrailerPlate  string `toml:"trailerPlate"`
 	Source        string `toml:"source"`
 	Destination   string `toml:"destination"`
 	Route         string `toml:"route"`

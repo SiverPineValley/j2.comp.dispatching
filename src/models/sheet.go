@@ -15,9 +15,8 @@ type SheetComp struct {
 }
 
 type CompReturn struct {
-	Idx          []string
-	Reference    []string
-	TrailerPlate []string
+	Idx       []string
+	Reference []string
 }
 
 type CompData struct {
@@ -28,11 +27,11 @@ type CompData struct {
 	IsGansun       bool
 	IsGansunOneway bool
 	Reference      []string
-	TrailerPlate   []string
 	J2No           []string
 	CJNo           []string
 	GansunNo       []string
 	J2             bool
 	CJ             bool
 	Gansun         bool
+	Stage          int
 }
