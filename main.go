@@ -148,11 +148,11 @@ func writeCSVData(resultFileName string, comData []models.CompData) {
 
 	// Comp 내용 쓰기
 	if cjContain && gansunContain {
-		resWr.Write([]byte("NO, 날짜, 차량번호, 출발, 도착, 간선여부, J2, CJ, Gansun, 추가운임구분, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 비고, 완료단계\n"))
+		resWr.Write([]byte("NO, 날짜, 차량번호, 출발, 도착, 간선여부, J2, CJ, Gansun, 추가운임구분, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 청구, 총운송비용, 비고, 완료단계\n"))
 	} else if cjContain && !gansunContain {
-		resWr.Write([]byte("NO, 날짜, 차량번호, 출발, 도착, 간선여부, J2, CJ, 추가운임구분, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 비고, 완료단계\n"))
+		resWr.Write([]byte("NO, 날짜, 차량번호, 출발, 도착, 간선여부, J2, CJ, 추가운임구분, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 청구, 총운송비용, 비고, 완료단계\n"))
 	} else if !cjContain && gansunContain {
-		resWr.Write([]byte("NO, 날짜, 차량번호, 출발, 도착, 간선여부, J2, Gansun, 추가운임구분, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 비고, 완료단계\n"))
+		resWr.Write([]byte("NO, 날짜, 차량번호, 출발, 도착, 간선여부, J2, Gansun, 추가운임구분, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 청구, 총운송비용, 비고, 완료단계\n"))
 	}
 
 	for idx, value := range comData {
@@ -197,7 +197,7 @@ func writeCSVData(resultFileName string, comData []models.CompData) {
 			}
 		}
 
-		each = each + "," + utility.GetArrayData(value.DetourFeeType, " / ") + "," + strconv.Itoa(value.DetourFee) + "," + utility.GetArrayData(value.DetourFeeType3, " / ") + "," + strconv.Itoa(value.DetourFee3) + "," + utility.GetArrayData(value.MultiTourPercent, " / ") + "," + utility.GetArrayData(value.Reference, " / ") + "," + utility.GetStage(value.Stage) + "\n"
+		each = each + "," + utility.GetArrayData(value.DetourFeeType, " / ") + "," + strconv.Itoa(value.DetourFee) + "," + utility.GetArrayData(value.DetourFeeType3, " / ") + "," + strconv.Itoa(value.DetourFee3) + "," + utility.GetArrayData(value.MultiTourPercent, " / ") + "," + strconv.Itoa(value.FirstTotalFee) + "," + strconv.Itoa(value.SecondTotalFee) + "," + utility.GetArrayData(value.Reference, " / ") + "," + utility.GetStage(value.Stage) + "\n"
 		resWr.Write([]byte(each))
 		w.Flush()
 	}
@@ -217,30 +217,36 @@ func compareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 		// 둘다 있고 개수 동일하면 둘다 추가 X
 		// 개수 다르면 둘다 추가 O
 		if len(value.Idx) == len(cjValue.Idx) {
-			if value.Stage == 2 && value.TotalFee == cjValue.TotalFee {
+			isSame, _, _ := utility.CheckTotalFee(value.TotalFee, cjValue.TotalFee)
+			if value.Stage == 2 && isSame {
 				value.Stage = 3
 			}
 
-			result = append(result, models.CompData{
-				Date:             key.Date,
-				LicensePlate:     key.LicensePlate,
-				Source:           key.Source,
-				Destination:      key.Destination,
-				IsGansun:         false,
-				IsGansunOneway:   false,
-				J2No:             value.Idx,
-				CJNo:             cjValue.Idx,
-				Reference:        cjValue.Reference,
-				DetourFeeType:    cjValue.DetourFeeType,
-				DetourFee:        cjValue.DetourFee,
-				DetourFeeType3:   cjValue.DetourFeeType3,
-				DetourFee3:       cjValue.DetourFee3,
-				MultiTourPercent: cjValue.MultiTourPercent,
-				J2:               true,
-				CJ:               true,
-				Gansun:           false,
-				Stage:            value.Stage,
-			})
+			for idx, _ := range value.TotalFee {
+				result = append(result, models.CompData{
+					Date:             key.Date,
+					LicensePlate:     key.LicensePlate,
+					Source:           key.Source,
+					Destination:      key.Destination,
+					IsGansun:         false,
+					IsGansunOneway:   false,
+					J2No:             value.Idx,
+					CJNo:             cjValue.Idx,
+					Reference:        cjValue.Reference,
+					DetourFeeType:    cjValue.DetourFeeType,
+					DetourFee:        cjValue.DetourFee,
+					DetourFeeType3:   cjValue.DetourFeeType3,
+					DetourFee3:       cjValue.DetourFee3,
+					MultiTourPercent: cjValue.MultiTourPercent,
+					J2:               true,
+					CJ:               true,
+					Gansun:           false,
+					Stage:            value.Stage,
+					FirstTotalFee:    value.TotalFee[idx],
+					SecondTotalFee:   cjValue.TotalFee[idx],
+				})
+			}
+
 			delete(j2Data, key)
 			delete(cjData, key)
 			continue
@@ -296,30 +302,36 @@ func compareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 		// 둘다 있고 개수 동일하면 둘다 추가 X
 		// 개수 다르면 둘다 추가 O
 		if len(value.Idx) == len(gansunValue.Idx) {
-			if value.Stage == 2 && value.TotalFee == gansunValue.TotalFee {
+			isSame, _, _ := utility.CheckTotalFee(value.TotalFee, gansunValue.TotalFee)
+			if value.Stage == 2 && isSame {
 				value.Stage = 3
 			}
 
-			result = append(result, models.CompData{
-				Date:             key.Date,
-				LicensePlate:     key.LicensePlate,
-				Source:           key.Source,
-				Destination:      key.Destination,
-				IsGansun:         key.Gansun,
-				IsGansunOneway:   key.GansunOneWay,
-				J2No:             value.Idx,
-				GansunNo:         gansunValue.Idx,
-				Reference:        gansunValue.Reference,
-				DetourFeeType:    gansunValue.DetourFeeType,
-				DetourFee:        gansunValue.DetourFee,
-				DetourFeeType3:   gansunValue.DetourFeeType3,
-				DetourFee3:       gansunValue.DetourFee3,
-				MultiTourPercent: gansunValue.MultiTourPercent,
-				J2:               true,
-				CJ:               false,
-				Gansun:           true,
-				Stage:            value.Stage,
-			})
+			for idx, _ := range value.TotalFee {
+				result = append(result, models.CompData{
+					Date:             key.Date,
+					LicensePlate:     key.LicensePlate,
+					Source:           key.Source,
+					Destination:      key.Destination,
+					IsGansun:         key.Gansun,
+					IsGansunOneway:   key.GansunOneWay,
+					J2No:             value.Idx,
+					GansunNo:         gansunValue.Idx,
+					Reference:        gansunValue.Reference,
+					DetourFeeType:    gansunValue.DetourFeeType,
+					DetourFee:        gansunValue.DetourFee,
+					DetourFeeType3:   gansunValue.DetourFeeType3,
+					DetourFee3:       gansunValue.DetourFee3,
+					MultiTourPercent: gansunValue.MultiTourPercent,
+					J2:               true,
+					CJ:               false,
+					Gansun:           true,
+					Stage:            value.Stage,
+					FirstTotalFee:    value.TotalFee[idx],
+					SecondTotalFee:   gansunValue.TotalFee[idx],
+				})
+			}
+
 			delete(j2Data, key)
 			delete(gansunData, key)
 			continue
@@ -592,7 +604,7 @@ func parseJ2Data(j2Sheet *xlsx.Sheet, parseType, companyFilter string) map[model
 			value.Reference = append(value.Reference, reference)
 			value.Stage = stage
 			if totalFee != -1 {
-				value.TotalFee += totalFee
+				value.TotalFee = append(value.TotalFee, totalFee)
 			}
 
 			// 간선일때
@@ -751,7 +763,7 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 			value.DetourFee += detourFee
 			value.DetourFee3 += detourFee3
 			if totalFee != -1 {
-				value.TotalFee += totalFee
+				value.TotalFee = append(value.TotalFee, totalFee)
 			}
 
 			result[*each] = value
@@ -915,7 +927,7 @@ func parseGansunData(gansunSheet *xlsx.Sheet, parseType string) map[models.Sheet
 			value.DetourFee += detourFee
 			value.DetourFee3 += detourFee3
 			if totalFee != -1 {
-				value.TotalFee += totalFee
+				value.TotalFee = append(value.TotalFee, totalFee)
 			}
 
 			result[*each] = value

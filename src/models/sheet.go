@@ -23,6 +23,7 @@ type CompReturn struct {
 	DetourFee3       int
 	MultiTourPercent []string
 	Stage            int
+	TotalFee         []int
 }
 
 type CompData struct {
@@ -45,4 +46,6 @@ type CompData struct {
 	CJ               bool
 	Gansun           bool
 	Stage            int
+	FirstTotalFee    int
+	SecondTotalFee   int
 }
