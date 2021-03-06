@@ -39,3 +39,8 @@ func GetStage(stage int) string {
 
 	return ""
 }
+
+// CheckStageSecond is function that check the stage is two.
+func CheckStageSecond(company, postPaid, j2PostPaid string) bool {
+	return (company == "제이투" && postPaid == j2PostPaid) || (company != "제이투" && postPaid != "")
+}

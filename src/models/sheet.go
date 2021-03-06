@@ -22,6 +22,7 @@ type CompReturn struct {
 	DetourFeeType3   []string
 	DetourFee3       int
 	MultiTourPercent []string
+	Stage            int
 }
 
 type CompData struct {

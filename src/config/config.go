@@ -37,6 +37,7 @@ type ColumnTitle struct {
 	Company          string `toml:"company"`
 	Postpaid         string `toml:"postpaid"`
 	J2Postpaid       string `toml:"j2Postpaid"`
+	TotalFee         string `toml:"totalFee"`
 	StartIdx         int    `toml:"startIndex"`
 }
 

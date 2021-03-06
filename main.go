@@ -217,6 +217,10 @@ func compareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 		// 둘다 있고 개수 동일하면 둘다 추가 X
 		// 개수 다르면 둘다 추가 O
 		if len(value.Idx) == len(cjValue.Idx) {
+			if value.Stage == 2 && value.TotalFee == cjValue.TotalFee {
+				value.Stage = 3
+			}
+
 			result = append(result, models.CompData{
 				Date:             key.Date,
 				LicensePlate:     key.LicensePlate,
@@ -235,7 +239,7 @@ func compareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 				J2:               true,
 				CJ:               true,
 				Gansun:           false,
-				Stage:            1,
+				Stage:            value.Stage,
 			})
 			delete(j2Data, key)
 			delete(cjData, key)
@@ -292,6 +296,10 @@ func compareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 		// 둘다 있고 개수 동일하면 둘다 추가 X
 		// 개수 다르면 둘다 추가 O
 		if len(value.Idx) == len(gansunValue.Idx) {
+			if value.Stage == 2 && value.TotalFee == gansunValue.TotalFee {
+				value.Stage = 3
+			}
+
 			result = append(result, models.CompData{
 				Date:             key.Date,
 				LicensePlate:     key.LicensePlate,
@@ -310,7 +318,7 @@ func compareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 				J2:               true,
 				CJ:               false,
 				Gansun:           true,
-				Stage:            1,
+				Stage:            value.Stage,
 			})
 			delete(j2Data, key)
 			delete(gansunData, key)
@@ -427,7 +435,18 @@ func getCellTitle(sh *xlsx.Sheet, title []string, startIdx int) []int {
 }
 
 func parseJ2Data(j2Sheet *xlsx.Sheet, parseType, companyFilter string) map[models.SheetComp]models.CompReturn {
-	var j2Titles = [...]string{configFile.J2.No, configFile.J2.Date, configFile.J2.LicensePlate, configFile.J2.Route, configFile.J2.Reference, configFile.J2.TargetCompany}
+	var j2Titles = [...]string{
+		configFile.J2.No,
+		configFile.J2.Date,
+		configFile.J2.LicensePlate,
+		configFile.J2.Route,
+		configFile.J2.Reference,
+		configFile.J2.TargetCompany,
+		configFile.J2.Company,
+		configFile.J2.Postpaid,
+		configFile.J2.J2Postpaid,
+		configFile.J2.TotalFee,
+	}
 	var startIdx = configFile.J2.StartIdx
 	j2TitleIdx := getCellTitle(j2Sheet, j2Titles[:], startIdx)
 
@@ -437,6 +456,10 @@ func parseJ2Data(j2Sheet *xlsx.Sheet, parseType, companyFilter string) map[model
 	routeIdx := j2TitleIdx[3]
 	referenceIdx := j2TitleIdx[4]
 	targetCompanyIdx := j2TitleIdx[5]
+	companyIdx := j2TitleIdx[6]
+	postPaidIdx := j2TitleIdx[7]
+	j2PostPaidIdx := j2TitleIdx[8]
+	totalFeeIdx := j2TitleIdx[9]
 
 	result := make(map[models.SheetComp]models.CompReturn)
 	for idx := 0 + startIdx + 1; idx < j2Sheet.MaxRow; idx++ {
@@ -470,6 +493,35 @@ func parseJ2Data(j2Sheet *xlsx.Sheet, parseType, companyFilter string) map[model
 		referenceCell, _ := j2Sheet.Cell(idx, referenceIdx)
 		reference := referenceCell.String()
 
+		// 소속
+		companyCell, _ := j2Sheet.Cell(idx, companyIdx)
+		company := companyCell.String()
+
+		// 후불
+		postPaidCell, _ := j2Sheet.Cell(idx, postPaidIdx)
+		postPaid := postPaidCell.String()
+
+		// J2후불
+		j2PostPaidCell, _ := j2Sheet.Cell(idx, j2PostPaidIdx)
+		j2PostPaid := j2PostPaidCell.String()
+
+		// 청구
+		totalFeeCell, _ := j2Sheet.Cell(idx, totalFeeIdx)
+		totalFeeStr := totalFeeCell.String()
+		totalFeeStr = strings.Replace(totalFeeStr, ",", "", -1)
+		tempTotalFee, err := strconv.Atoi(totalFeeStr)
+		totalFee := -1
+		if err == nil {
+			totalFee = tempTotalFee
+		}
+
+		stage := 0
+		if utility.CheckStageSecond(company, postPaid, j2PostPaid) {
+			stage = 2
+		} else {
+			stage = 1
+		}
+
 		if len(slice) < 2 {
 			continue
 		}
@@ -478,6 +530,7 @@ func parseJ2Data(j2Sheet *xlsx.Sheet, parseType, companyFilter string) map[model
 		dest := slice[1]
 		isGansun := false
 		isGansunOneway := false
+
 		// 간선편도
 		if strings.Contains(dest, "간선편도") {
 			isGansun = true
@@ -537,6 +590,10 @@ func parseJ2Data(j2Sheet *xlsx.Sheet, parseType, companyFilter string) map[model
 			value := result[*each]
 			value.Idx = append(value.Idx, no)
 			value.Reference = append(value.Reference, reference)
+			value.Stage = stage
+			if totalFee != -1 {
+				value.TotalFee += totalFee
+			}
 
 			// 간선일때
 			if isGansun {
@@ -568,6 +625,7 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 		configFile.Cj.DetourFeeType3,
 		configFile.Cj.DetourFee3,
 		configFile.Cj.MultiTourPercent,
+		configFile.Cj.TotalFee,
 	}
 	cjTitleIdx := getCellTitle(cjSheet, cjTitles[:], 0)
 	var startIdx = configFile.Cj.StartIdx
@@ -583,6 +641,7 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 	detourFeeType3Idx := cjTitleIdx[8]
 	detourFee3Idx := cjTitleIdx[9]
 	multiTourPercentIdx := cjTitleIdx[10]
+	totalFeeIdx := cjTitleIdx[11]
 
 	result := make(map[models.SheetComp]models.CompReturn)
 	for idx := 0 + startIdx; idx < cjSheet.MaxRow; idx++ {
@@ -621,6 +680,16 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 		reference := referenceCell.String()
 		if strings.Contains(reference, ",") {
 			reference = "\"" + reference + "\""
+		}
+
+		// 총운송비용
+		totalFeeCell, _ := cjSheet.Cell(idx, totalFeeIdx)
+		totalFeeStr := totalFeeCell.String()
+		totalFeeStr = strings.Replace(totalFeeStr, ",", "", -1)
+		tempTotalFee, err := strconv.Atoi(totalFeeStr)
+		totalFee := -1
+		if err == nil {
+			totalFee = tempTotalFee
 		}
 
 		// 추가운임구분
@@ -681,6 +750,9 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 			value.MultiTourPercent = append(value.MultiTourPercent, multiTourPercent)
 			value.DetourFee += detourFee
 			value.DetourFee3 += detourFee3
+			if totalFee != -1 {
+				value.TotalFee += totalFee
+			}
 
 			result[*each] = value
 		}
@@ -704,6 +776,7 @@ func parseGansunData(gansunSheet *xlsx.Sheet, parseType string) map[models.Sheet
 		configFile.Gansun.DetourFeeType3,
 		configFile.Gansun.DetourFee3,
 		configFile.Gansun.MultiTourPercent,
+		configFile.Gansun.TotalFee,
 	}
 	gansunTitleIdx := getCellTitle(gansunSheet, gansunTitles[:], 0)
 	var startIdx = configFile.Gansun.StartIdx
@@ -720,6 +793,7 @@ func parseGansunData(gansunSheet *xlsx.Sheet, parseType string) map[models.Sheet
 	detourFeeType3Idx := gansunTitleIdx[9]
 	detourFee3Idx := gansunTitleIdx[10]
 	multiTourPercentIdx := gansunTitleIdx[11]
+	totalFeeIdx := gansunTitleIdx[12]
 
 	result := make(map[models.SheetComp]models.CompReturn)
 	for idx := 0 + startIdx; idx < gansunSheet.MaxRow; idx++ {
@@ -770,6 +844,16 @@ func parseGansunData(gansunSheet *xlsx.Sheet, parseType string) map[models.Sheet
 		reference := referenceCell.String()
 		if strings.Contains(reference, ",") {
 			reference = "\"" + reference + "\""
+		}
+
+		// 총운송비용
+		totalFeeCell, _ := gansunSheet.Cell(idx, totalFeeIdx)
+		totalFeeStr := totalFeeCell.String()
+		totalFeeStr = strings.Replace(totalFeeStr, ",", "", -1)
+		tempTotalFee, err := strconv.Atoi(totalFeeStr)
+		totalFee := -1
+		if err == nil {
+			totalFee = tempTotalFee
 		}
 
 		// 추가운임구분
@@ -830,6 +914,9 @@ func parseGansunData(gansunSheet *xlsx.Sheet, parseType string) map[models.Sheet
 			value.MultiTourPercent = append(value.MultiTourPercent, multiTourPercent)
 			value.DetourFee += detourFee
 			value.DetourFee3 += detourFee3
+			if totalFee != -1 {
+				value.TotalFee += totalFee
+			}
 
 			result[*each] = value
 		}
