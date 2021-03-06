@@ -148,11 +148,11 @@ func writeCSVData(resultFileName string, comData []models.CompData) {
 
 	// Comp 내용 쓰기
 	if cjContain && gansunContain {
-		resWr.Write([]byte("NO, 날짜, 차량번호, 샤시번호, 출발, 도착, 간선, J2, CJ, Gansun, J2_NO, CJ_NO, Gansun_No, 비고\n"))
+		resWr.Write([]byte("NO, 날짜, 차량번호, 출발, 도착, 간선여부, J2, CJ, Gansun, 추가운임구분, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 비고, 완료단계\n"))
 	} else if cjContain && !gansunContain {
-		resWr.Write([]byte("NO, 날짜, 차량번호, 샤시번호, 출발, 도착, 간선, J2, CJ, J2_NO, CJ_NO, 비고\n"))
+		resWr.Write([]byte("NO, 날짜, 차량번호, 출발, 도착, 간선여부, J2, CJ, 추가운임구분, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 비고, 완료단계\n"))
 	} else if !cjContain && gansunContain {
-		resWr.Write([]byte("NO, 날짜, 차량번호, 샤시번호, 출발, 도착, 간선, J2, Gansun, J2_NO, Gansun_No, 비고\n"))
+		resWr.Write([]byte("NO, 날짜, 차량번호, 출발, 도착, 간선여부, J2, Gansun, 추가운임구분, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 비고, 완료단계\n"))
 	}
 
 	for idx, value := range comData {
@@ -164,58 +164,45 @@ func writeCSVData(resultFileName string, comData []models.CompData) {
 		}
 
 		// 자체 No, 날짜, 차량번호, 출발, 도착, 간선
-		each := strconv.Itoa(idx) + "," + value.Date + "," + value.LicensePlate + "," + getArrayData(value.TrailerPlate, " ") + "," + value.Source + "," + value.Destination + "," + gansun
+		each := strconv.Itoa(idx) + "," + value.Date + "," + value.LicensePlate + "," + value.Source + "," + value.Destination + "," + gansun
 
-		// Ture, False 및 No, 비고
+		// No 숫자, 비고
 		if cjContain && gansunContain {
 			if value.J2 && value.CJ {
-				each = each + ",TRUE, TRUE, FALSE, " + getArrayData(value.J2No, " ") + "," + getArrayData(value.CJNo, " ") + "," + "," + getArrayData(value.Reference, ",")
+				each = each + "," + strconv.Itoa(len(value.J2No)) + "," + strconv.Itoa(len(value.CJNo)) + ", 0"
 			} else if value.J2 && value.Gansun {
-				each = each + ",TRUE, FALSE, TRUE, " + getArrayData(value.J2No, " ") + "," + "," + getArrayData(value.GansunNo, " ") + "," + getArrayData(value.Reference, ",")
+				each = each + "," + strconv.Itoa(len(value.J2No)) + ", 0, " + strconv.Itoa(len(value.GansunNo))
 			} else if value.J2 && !value.CJ && !value.Gansun {
-				each = each + ",TRUE, FALSE, FALSE, " + getArrayData(value.J2No, " ")
+				each = each + strconv.Itoa(len(value.J2No)) + ", 0, 0"
 			} else if !value.J2 && value.CJ && !value.Gansun {
-				each = each + ",FALSE, TRUE, FALSE, , " + getArrayData(value.CJNo, " ")
+				each = each + ",0," + strconv.Itoa(len(value.CJNo)) + ", 0"
 			} else if !value.J2 && !value.CJ && value.Gansun {
-				each = each + ",FALSE, FALSE, TRUE, , , " + getArrayData(value.GansunNo, " ")
+				each = each + ",0, 0," + strconv.Itoa(len(value.GansunNo))
 			}
 		} else if cjContain && !gansunContain {
 			if value.J2 && !value.CJ {
-				each = each + ",TRUE, FALSE, " + getArrayData(value.J2No, " ")
+				each = each + "," + strconv.Itoa(len(value.J2No)) + ", 0"
 			} else if !value.J2 && value.CJ {
-				each = each + ",FALSE, TRUE, ," + getArrayData(value.CJNo, " ") + "," + getArrayData(value.Reference, ",")
+				each = each + ",0," + strconv.Itoa(len(value.CJNo))
 			} else {
-				each = each + ",TRUE, TRUE, " + getArrayData(value.J2No, " ") + "," + getArrayData(value.CJNo, " ") + "," + getArrayData(value.Reference, ",")
+				each = each + "," + strconv.Itoa(len(value.J2No)) + "," + strconv.Itoa(len(value.CJNo))
 			}
 		} else if !cjContain && gansunContain {
 			if value.J2 && !value.Gansun {
-				each = each + ",TRUE, FALSE, " + getArrayData(value.J2No, " ")
+				each = each + "," + strconv.Itoa(len(value.J2No)) + ", 0"
 			} else if !value.J2 && value.Gansun {
-				each = each + ",FALSE, TRUE, ," + getArrayData(value.GansunNo, " ") + "," + getArrayData(value.Reference, ",")
+				each = each + ",0," + strconv.Itoa(len(value.GansunNo))
 			} else {
-				each = each + ",TRUE, TRUE, " + getArrayData(value.J2No, " ") + "," + getArrayData(value.GansunNo, " ") + "," + getArrayData(value.Reference, ",")
+				each = each + "," + strconv.Itoa(len(value.J2No)) + "," + strconv.Itoa(len(value.GansunNo))
 			}
 		}
 
-		each = each + "\n"
+		each = each + "," + utility.GetArrayData(value.DetourFeeType, " / ") + "," + strconv.Itoa(value.DetourFee) + "," + utility.GetArrayData(value.DetourFeeType3, " / ") + "," + strconv.Itoa(value.DetourFee3) + "," + utility.GetArrayData(value.MultiTourPercent, " / ") + "," + utility.GetArrayData(value.Reference, " / ") + "," + utility.GetStage(value.Stage) + "\n"
 		resWr.Write([]byte(each))
 		w.Flush()
 	}
 
 	resWr.Close()
-}
-
-func getArrayData(arr []string, split string) string {
-	if len(arr) == 0 {
-		return ""
-	}
-
-	no := arr[0]
-
-	for idx := 1; idx < len(arr); idx++ {
-		no = no + split + arr[idx]
-	}
-	return no
 }
 
 func compareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompReturn) (result []models.CompData) {
@@ -230,24 +217,50 @@ func compareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 		// 둘다 있고 개수 동일하면 둘다 추가 X
 		// 개수 다르면 둘다 추가 O
 		if len(value.Idx) == len(cjValue.Idx) {
+			result = append(result, models.CompData{
+				Date:             key.Date,
+				LicensePlate:     key.LicensePlate,
+				Source:           key.Source,
+				Destination:      key.Destination,
+				IsGansun:         false,
+				IsGansunOneway:   false,
+				J2No:             value.Idx,
+				CJNo:             cjValue.Idx,
+				Reference:        cjValue.Reference,
+				DetourFeeType:    cjValue.DetourFeeType,
+				DetourFee:        cjValue.DetourFee,
+				DetourFeeType3:   cjValue.DetourFeeType3,
+				DetourFee3:       cjValue.DetourFee3,
+				MultiTourPercent: cjValue.MultiTourPercent,
+				J2:               true,
+				CJ:               true,
+				Gansun:           false,
+				Stage:            1,
+			})
 			delete(j2Data, key)
 			delete(cjData, key)
 			continue
 		} else {
 			result = append(result, models.CompData{
-				Date:           key.Date,
-				LicensePlate:   key.LicensePlate,
-				Source:         key.Source,
-				Destination:    key.Destination,
-				IsGansun:       false,
-				IsGansunOneway: false,
-				J2No:           value.Idx,
-				CJNo:           cjValue.Idx,
-				Reference:      cjValue.Reference,
-				TrailerPlate:   cjValue.TrailerPlate,
-				J2:             true,
-				CJ:             true,
-				Gansun:         false})
+				Date:             key.Date,
+				LicensePlate:     key.LicensePlate,
+				Source:           key.Source,
+				Destination:      key.Destination,
+				IsGansun:         false,
+				IsGansunOneway:   false,
+				J2No:             value.Idx,
+				CJNo:             cjValue.Idx,
+				Reference:        cjValue.Reference,
+				DetourFeeType:    cjValue.DetourFeeType,
+				DetourFee:        cjValue.DetourFee,
+				DetourFeeType3:   cjValue.DetourFeeType3,
+				DetourFee3:       cjValue.DetourFee3,
+				MultiTourPercent: cjValue.MultiTourPercent,
+				J2:               true,
+				CJ:               true,
+				Gansun:           false,
+				Stage:            0,
+			})
 			delete(j2Data, key)
 			delete(cjData, key)
 			continue
@@ -269,7 +282,9 @@ func compareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 				Reference:      value.Reference,
 				J2:             true,
 				CJ:             false,
-				Gansun:         false})
+				Gansun:         false,
+				Stage:          0,
+			})
 			delete(j2Data, key)
 			continue
 		}
@@ -277,24 +292,50 @@ func compareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 		// 둘다 있고 개수 동일하면 둘다 추가 X
 		// 개수 다르면 둘다 추가 O
 		if len(value.Idx) == len(gansunValue.Idx) {
+			result = append(result, models.CompData{
+				Date:             key.Date,
+				LicensePlate:     key.LicensePlate,
+				Source:           key.Source,
+				Destination:      key.Destination,
+				IsGansun:         key.Gansun,
+				IsGansunOneway:   key.GansunOneWay,
+				J2No:             value.Idx,
+				GansunNo:         gansunValue.Idx,
+				Reference:        gansunValue.Reference,
+				DetourFeeType:    gansunValue.DetourFeeType,
+				DetourFee:        gansunValue.DetourFee,
+				DetourFeeType3:   gansunValue.DetourFeeType3,
+				DetourFee3:       gansunValue.DetourFee3,
+				MultiTourPercent: gansunValue.MultiTourPercent,
+				J2:               true,
+				CJ:               false,
+				Gansun:           true,
+				Stage:            1,
+			})
 			delete(j2Data, key)
 			delete(gansunData, key)
 			continue
 		} else {
 			result = append(result, models.CompData{
-				Date:           key.Date,
-				LicensePlate:   key.LicensePlate,
-				Source:         key.Source,
-				Destination:    key.Destination,
-				IsGansun:       key.Gansun,
-				IsGansunOneway: key.GansunOneWay,
-				J2No:           value.Idx,
-				GansunNo:       gansunValue.Idx,
-				Reference:      gansunValue.Reference,
-				TrailerPlate:   gansunValue.TrailerPlate,
-				J2:             true,
-				CJ:             false,
-				Gansun:         true})
+				Date:             key.Date,
+				LicensePlate:     key.LicensePlate,
+				Source:           key.Source,
+				Destination:      key.Destination,
+				IsGansun:         key.Gansun,
+				IsGansunOneway:   key.GansunOneWay,
+				J2No:             value.Idx,
+				GansunNo:         gansunValue.Idx,
+				Reference:        gansunValue.Reference,
+				DetourFeeType:    gansunValue.DetourFeeType,
+				DetourFee:        gansunValue.DetourFee,
+				DetourFeeType3:   gansunValue.DetourFeeType3,
+				DetourFee3:       gansunValue.DetourFee3,
+				MultiTourPercent: gansunValue.MultiTourPercent,
+				J2:               true,
+				CJ:               false,
+				Gansun:           true,
+				Stage:            0,
+			})
 			delete(j2Data, key)
 			delete(gansunData, key)
 			continue
@@ -314,41 +355,55 @@ func compareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 			Reference:      value.Reference,
 			J2:             true,
 			CJ:             false,
-			Gansun:         false})
+			Gansun:         false,
+			Stage:          0,
+		})
 	}
 
 	// CJ에만 있는 녀석
 	for key, value := range cjData {
 		result = append(result, models.CompData{
-			Date:           key.Date,
-			LicensePlate:   key.LicensePlate,
-			Source:         key.Source,
-			Destination:    key.Destination,
-			IsGansun:       false,
-			IsGansunOneway: false,
-			CJNo:           value.Idx,
-			Reference:      value.Reference,
-			TrailerPlate:   value.TrailerPlate,
-			J2:             false,
-			CJ:             true,
-			Gansun:         false})
+			Date:             key.Date,
+			LicensePlate:     key.LicensePlate,
+			Source:           key.Source,
+			Destination:      key.Destination,
+			IsGansun:         false,
+			IsGansunOneway:   false,
+			CJNo:             value.Idx,
+			Reference:        value.Reference,
+			DetourFeeType:    value.DetourFeeType,
+			DetourFee:        value.DetourFee,
+			DetourFeeType3:   value.DetourFeeType3,
+			DetourFee3:       value.DetourFee3,
+			MultiTourPercent: value.MultiTourPercent,
+			J2:               false,
+			CJ:               true,
+			Gansun:           false,
+			Stage:            0,
+		})
 	}
 
 	// 간선에만 있는 녀석
 	for key, value := range gansunData {
 		result = append(result, models.CompData{
-			Date:           key.Date,
-			LicensePlate:   key.LicensePlate,
-			Source:         key.Source,
-			Destination:    key.Destination,
-			IsGansun:       key.Gansun,
-			IsGansunOneway: key.GansunOneWay,
-			GansunNo:       value.Idx,
-			Reference:      value.Reference,
-			TrailerPlate:   value.TrailerPlate,
-			J2:             false,
-			CJ:             false,
-			Gansun:         true})
+			Date:             key.Date,
+			LicensePlate:     key.LicensePlate,
+			Source:           key.Source,
+			Destination:      key.Destination,
+			IsGansun:         key.Gansun,
+			IsGansunOneway:   key.GansunOneWay,
+			GansunNo:         value.Idx,
+			Reference:        value.Reference,
+			DetourFeeType:    value.DetourFeeType,
+			DetourFee:        value.DetourFee,
+			DetourFeeType3:   value.DetourFeeType3,
+			DetourFee3:       value.DetourFee3,
+			MultiTourPercent: value.MultiTourPercent,
+			J2:               false,
+			CJ:               false,
+			Gansun:           true,
+			Stage:            0,
+		})
 	}
 
 	return
@@ -502,7 +557,18 @@ func parseJ2Data(j2Sheet *xlsx.Sheet, parseType, companyFilter string) map[model
 }
 
 func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]models.CompReturn {
-	var cjTitles = [...]string{configFile.Cj.No, configFile.Cj.Date, configFile.Cj.LicensePlate, configFile.Cj.Source, configFile.Cj.Destination, configFile.Cj.Reference, configFile.Cj.TrailerPlate} // configFile.Cj.TrailerPlate, configFile.Cj.CarType}
+	var cjTitles = [...]string{
+		configFile.Cj.No, configFile.Cj.Date,
+		configFile.Cj.LicensePlate,
+		configFile.Cj.Source,
+		configFile.Cj.Destination,
+		configFile.Cj.Reference,
+		configFile.Cj.DetourFeeType,
+		configFile.Cj.DetourFee,
+		configFile.Cj.DetourFeeType3,
+		configFile.Cj.DetourFee3,
+		configFile.Cj.MultiTourPercent,
+	}
 	cjTitleIdx := getCellTitle(cjSheet, cjTitles[:], 0)
 	var startIdx = configFile.Cj.StartIdx
 
@@ -512,7 +578,11 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 	sourceIdx := cjTitleIdx[3]
 	destIdx := cjTitleIdx[4]
 	referenceIdx := cjTitleIdx[5]
-	trailerIdx := cjTitleIdx[6]
+	detourFeeTypeIdx := cjTitleIdx[6]
+	detourFeeIdx := cjTitleIdx[7]
+	detourFeeType3Idx := cjTitleIdx[8]
+	detourFee3Idx := cjTitleIdx[9]
+	multiTourPercentIdx := cjTitleIdx[10]
 
 	result := make(map[models.SheetComp]models.CompReturn)
 	for idx := 0 + startIdx; idx < cjSheet.MaxRow; idx++ {
@@ -527,10 +597,6 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 		// 차량번호
 		licenseCell, _ := cjSheet.Cell(idx, licenceIdx)
 		licensePlate := licenseCell.String()
-
-		// 트레일러 번호
-		trailerCell, _ := cjSheet.Cell(idx, trailerIdx)
-		trailerPlate := trailerCell.String()
 
 		// 출발
 		sourceCell, _ := cjSheet.Cell(idx, sourceIdx)
@@ -557,6 +623,38 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 			reference = "\"" + reference + "\""
 		}
 
+		// 추가운임구분
+		detourFeeTypeCell, _ := cjSheet.Cell(idx, detourFeeTypeIdx)
+		detourFeeType := detourFeeTypeCell.String()
+
+		// 추가운임
+		detourFeeCell, _ := cjSheet.Cell(idx, detourFeeIdx)
+		detourFee := 0
+		if detourFeeCell.String() != "" || detourFeeCell.String() != "0" {
+			temp, err := strconv.Atoi(detourFeeCell.String())
+			if err == nil {
+				detourFee = temp
+			}
+		}
+
+		// 추가운임구분3
+		detourFeeType3Cell, _ := cjSheet.Cell(idx, detourFeeType3Idx)
+		detourFeeType3 := detourFeeType3Cell.String()
+
+		// 추가운임3
+		detourFee3Cell, _ := cjSheet.Cell(idx, detourFee3Idx)
+		detourFee3 := 0
+		if detourFee3Cell.String() != "" || detourFee3Cell.String() != "0" {
+			temp, err := strconv.Atoi(detourFee3Cell.String())
+			if err == nil {
+				detourFee3 = temp
+			}
+		}
+
+		// 다회전기준요율
+		multiTourPercentCell, _ := cjSheet.Cell(idx, multiTourPercentIdx)
+		multiTourPercent := multiTourPercentCell.String()
+
 		if no == "합계" || no == "" && date.String() == "" && licensePlate == "" && source == "" && dest == "" {
 			break
 		}
@@ -578,10 +676,11 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 			value := result[*each]
 			value.Idx = append(value.Idx, no)
 			value.Reference = append(value.Reference, reference)
-
-			if licensePlate[6:8] == "98" || licensePlate[6:8] == "99" {
-				value.TrailerPlate = append(value.TrailerPlate, trailerPlate)
-			}
+			value.DetourFeeType = append(value.DetourFeeType, detourFeeType)
+			value.DetourFeeType3 = append(value.DetourFeeType3, detourFeeType3)
+			value.MultiTourPercent = append(value.MultiTourPercent, multiTourPercent)
+			value.DetourFee += detourFee
+			value.DetourFee3 += detourFee3
 
 			result[*each] = value
 		}
@@ -592,7 +691,20 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 }
 
 func parseGansunData(gansunSheet *xlsx.Sheet, parseType string) map[models.SheetComp]models.CompReturn {
-	var gansunTitles = [...]string{configFile.Gansun.No, configFile.Gansun.Date, configFile.Gansun.LicensePlate, configFile.Gansun.Source, configFile.Gansun.Destination, configFile.Gansun.Reference, configFile.Gansun.CarType, configFile.Gansun.TrailerPlate}
+	var gansunTitles = [...]string{
+		configFile.Gansun.No,
+		configFile.Gansun.Date,
+		configFile.Gansun.LicensePlate,
+		configFile.Gansun.Source,
+		configFile.Gansun.Destination,
+		configFile.Gansun.Reference,
+		configFile.Gansun.CarType,
+		configFile.Gansun.DetourFeeType,
+		configFile.Gansun.DetourFee,
+		configFile.Gansun.DetourFeeType3,
+		configFile.Gansun.DetourFee3,
+		configFile.Gansun.MultiTourPercent,
+	}
 	gansunTitleIdx := getCellTitle(gansunSheet, gansunTitles[:], 0)
 	var startIdx = configFile.Gansun.StartIdx
 
@@ -603,7 +715,11 @@ func parseGansunData(gansunSheet *xlsx.Sheet, parseType string) map[models.Sheet
 	destIdx := gansunTitleIdx[4]
 	referenceIdx := gansunTitleIdx[5]
 	carTypeIdx := gansunTitleIdx[6]
-	trailerIdx := gansunTitleIdx[7]
+	detourFeeTypeIdx := gansunTitleIdx[7]
+	detourFeeIdx := gansunTitleIdx[8]
+	detourFeeType3Idx := gansunTitleIdx[9]
+	detourFee3Idx := gansunTitleIdx[10]
+	multiTourPercentIdx := gansunTitleIdx[11]
 
 	result := make(map[models.SheetComp]models.CompReturn)
 	for idx := 0 + startIdx; idx < gansunSheet.MaxRow; idx++ {
@@ -618,10 +734,6 @@ func parseGansunData(gansunSheet *xlsx.Sheet, parseType string) map[models.Sheet
 		// 차량번호
 		licenseCell, _ := gansunSheet.Cell(idx, licenceIdx)
 		licensePlate := licenseCell.String()
-
-		// 트레일러 번호
-		trailerCell, _ := gansunSheet.Cell(idx, trailerIdx)
-		trailerPlate := trailerCell.String()
 
 		// 출발
 		sourceCell, _ := gansunSheet.Cell(idx, sourceIdx)
@@ -660,6 +772,38 @@ func parseGansunData(gansunSheet *xlsx.Sheet, parseType string) map[models.Sheet
 			reference = "\"" + reference + "\""
 		}
 
+		// 추가운임구분
+		detourFeeTypeCell, _ := gansunSheet.Cell(idx, detourFeeTypeIdx)
+		detourFeeType := detourFeeTypeCell.String()
+
+		// 추가운임
+		detourFeeCell, _ := gansunSheet.Cell(idx, detourFeeIdx)
+		detourFee := 0
+		if detourFeeCell.String() != "" || detourFeeCell.String() != "0" {
+			temp, err := strconv.Atoi(detourFeeCell.String())
+			if err == nil {
+				detourFee = temp
+			}
+		}
+
+		// 추가운임구분3
+		detourFeeType3Cell, _ := gansunSheet.Cell(idx, detourFeeType3Idx)
+		detourFeeType3 := detourFeeType3Cell.String()
+
+		// 추가운임3
+		detourFee3Cell, _ := gansunSheet.Cell(idx, detourFee3Idx)
+		detourFee3 := 0
+		if detourFee3Cell.String() != "" || detourFee3Cell.String() != "0" {
+			temp, err := strconv.Atoi(detourFee3Cell.String())
+			if err == nil {
+				detourFee3 = temp
+			}
+		}
+
+		// 다회전기준요율
+		multiTourPercentCell, _ := gansunSheet.Cell(idx, multiTourPercentIdx)
+		multiTourPercent := multiTourPercentCell.String()
+
 		if no == "합계" || no == "" && date.String() == "" && licensePlate == "" && source == "" && dest == "" {
 			break
 		}
@@ -681,10 +825,11 @@ func parseGansunData(gansunSheet *xlsx.Sheet, parseType string) map[models.Sheet
 			value := result[*each]
 			value.Idx = append(value.Idx, no)
 			value.Reference = append(value.Reference, reference)
-
-			if licensePlate[6:8] == "98" || licensePlate[6:8] == "99" {
-				value.TrailerPlate = append(value.TrailerPlate, trailerPlate)
-			}
+			value.DetourFeeType = append(value.DetourFeeType, detourFeeType)
+			value.DetourFeeType3 = append(value.DetourFeeType3, detourFeeType3)
+			value.MultiTourPercent = append(value.MultiTourPercent, multiTourPercent)
+			value.DetourFee += detourFee
+			value.DetourFee3 += detourFee3
 
 			result[*each] = value
 		}

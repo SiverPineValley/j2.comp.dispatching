@@ -15,23 +15,33 @@ type SheetComp struct {
 }
 
 type CompReturn struct {
-	Idx       []string
-	Reference []string
+	Idx              []string
+	Reference        []string
+	DetourFeeType    []string
+	DetourFee        int
+	DetourFeeType3   []string
+	DetourFee3       int
+	MultiTourPercent []string
 }
 
 type CompData struct {
-	Date           string
-	LicensePlate   string
-	Source         string
-	Destination    string
-	IsGansun       bool
-	IsGansunOneway bool
-	Reference      []string
-	J2No           []string
-	CJNo           []string
-	GansunNo       []string
-	J2             bool
-	CJ             bool
-	Gansun         bool
-	Stage          int
+	Date             string
+	LicensePlate     string
+	Source           string
+	Destination      string
+	IsGansun         bool
+	IsGansunOneway   bool
+	Reference        []string
+	J2No             []string
+	CJNo             []string
+	GansunNo         []string
+	DetourFeeType    []string
+	DetourFee        int
+	DetourFeeType3   []string
+	DetourFee3       int
+	MultiTourPercent []string
+	J2               bool
+	CJ               bool
+	Gansun           bool
+	Stage            int
 }

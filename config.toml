@@ -18,6 +18,9 @@ licensePlate = "차량 번호"
 route = "운행 노선"
 reference = "비 고"
 targetCompany = "청구 업체"
+company = "소 속"
+postpaid = "후 불"
+j2Postpaid = "J2 후 불"
 startIndex = 5
 
 [cj]
@@ -30,6 +33,11 @@ destination = "도착터미널"
 layoverNum = "경유회수"
 carType = "차량구분"
 reference = "비고"
+detourFeeType = "추가운임구분"
+detourFee = "추가운임"
+detourFeeType3 = "추가운임구분3"
+detourFee3 = "추가운임3"
+multiTourPercent = "다회전기준요율"
 startIndex = 1
 
 [gansun]
@@ -42,6 +50,11 @@ destination = "도착터미널"
 layoverNum = "경유회수"
 carType = "차량구분"
 reference = "비고"
+detourFeeType = "추가운임구분"
+detourFee = "추가운임"
+detourFeeType3 = "추가운임구분3"
+detourFee3 = "추가운임3"
+multiTourPercent = "다회전기준요율"
 startIndex = 1
 
 [direct]

@@ -19,17 +19,25 @@ type Config struct {
 
 // ColumnTitle keep each j2, cj column name.
 type ColumnTitle struct {
-	No            string `toml:"no"`
-	Date          string `toml:"date"`
-	LicensePlate  string `toml:"licensePlate"`
-	Source        string `toml:"source"`
-	Destination   string `toml:"destination"`
-	Route         string `toml:"route"`
-	LayoverNum    string `toml:"layoverNum"`
-	CarType       string `toml:"carType"`
-	Reference     string `toml:"reference"`
-	TargetCompany string `toml:"targetCompany"`
-	StartIdx      int    `toml:"startIndex"`
+	No               string `toml:"no"`
+	Date             string `toml:"date"`
+	LicensePlate     string `toml:"licensePlate"`
+	Source           string `toml:"source"`
+	Destination      string `toml:"destination"`
+	Route            string `toml:"route"`
+	LayoverNum       string `toml:"layoverNum"`
+	CarType          string `toml:"carType"`
+	Reference        string `toml:"reference"`
+	TargetCompany    string `toml:"targetCompany"`
+	DetourFeeType    string `toml:"detourFeeType"`
+	DetourFee        string `toml:"detourFee"`
+	DetourFeeType3   string `toml:"detourFeeType3"`
+	DetourFee3       string `toml:"detourFee3"`
+	MultiTourPercent string `toml:"multiTourPercent"`
+	Company          string `toml:"company"`
+	Postpaid         string `toml:"postpaid"`
+	J2Postpaid       string `toml:"j2Postpaid"`
+	StartIdx         int    `toml:"startIndex"`
 }
 
 // Gansun is gansun route - company filtering config
