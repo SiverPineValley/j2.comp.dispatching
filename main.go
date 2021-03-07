@@ -148,14 +148,14 @@ func writeCSVData(resultFileName string, comData []models.CompData) {
 
 	// Comp 내용 쓰기
 	if cjContain && gansunContain {
-		resWr.Write([]byte("NO, 날짜, 차량번호, 출발, 도착, 간선여부, J2, CJ, Gansun, 추가운임구분, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 청구, 총운송비용, 비고, 완료단계\n"))
+		resWr.Write([]byte("날짜, 차량번호, 출발, 도착, 간선여부, J2, CJ, Gansun, 추가운임구분, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 청구, 총운송비용, 비고, 완료단계\n"))
 	} else if cjContain && !gansunContain {
-		resWr.Write([]byte("NO, 날짜, 차량번호, 출발, 도착, 간선여부, J2, CJ, 추가운임구분, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 청구, 총운송비용, 비고, 완료단계\n"))
+		resWr.Write([]byte("날짜, 차량번호, 출발, 도착, 간선여부, J2, CJ, 추가운임구분, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 청구, 총운송비용, 비고, 완료단계\n"))
 	} else if !cjContain && gansunContain {
-		resWr.Write([]byte("NO, 날짜, 차량번호, 출발, 도착, 간선여부, J2, Gansun, 추가운임구분, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 청구, 총운송비용, 비고, 완료단계\n"))
+		resWr.Write([]byte("날짜, 차량번호, 출발, 도착, 간선여부, J2, Gansun, 추가운임구분, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 청구, 총운송비용, 비고, 완료단계\n"))
 	}
 
-	for idx, value := range comData {
+	for _, value := range comData {
 		gansun := ""
 		if value.IsGansun && value.IsGansunOneway {
 			gansun = "간선편도"
@@ -164,7 +164,7 @@ func writeCSVData(resultFileName string, comData []models.CompData) {
 		}
 
 		// 자체 No, 날짜, 차량번호, 출발, 도착, 간선
-		each := strconv.Itoa(idx) + "," + value.Date + "," + value.LicensePlate + "," + value.Source + "," + value.Destination + "," + gansun
+		each := value.Date + "," + value.LicensePlate + "," + value.Source + "," + value.Destination + "," + gansun
 
 		// No 숫자, 비고
 		if cjContain && gansunContain {
@@ -173,7 +173,7 @@ func writeCSVData(resultFileName string, comData []models.CompData) {
 			} else if value.J2 && value.Gansun {
 				each = each + "," + strconv.Itoa(len(value.J2No)) + ", 0, " + strconv.Itoa(len(value.GansunNo))
 			} else if value.J2 && !value.CJ && !value.Gansun {
-				each = each + strconv.Itoa(len(value.J2No)) + ", 0, 0"
+				each = each + "," + strconv.Itoa(len(value.J2No)) + ", 0, 0"
 			} else if !value.J2 && value.CJ && !value.Gansun {
 				each = each + ",0," + strconv.Itoa(len(value.CJNo)) + ", 0"
 			} else if !value.J2 && !value.CJ && value.Gansun {
@@ -601,7 +601,9 @@ func parseJ2Data(j2Sheet *xlsx.Sheet, parseType, companyFilter string) map[model
 
 			value := result[*each]
 			value.Idx = append(value.Idx, no)
-			value.Reference = append(value.Reference, reference)
+			if reference != "" {
+				value.Reference = append(value.Reference, reference)
+			}
 			value.Stage = stage
 			if totalFee != -1 {
 				value.TotalFee = append(value.TotalFee, totalFee)
@@ -756,10 +758,18 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 
 			value := result[*each]
 			value.Idx = append(value.Idx, no)
-			value.Reference = append(value.Reference, reference)
-			value.DetourFeeType = append(value.DetourFeeType, detourFeeType)
-			value.DetourFeeType3 = append(value.DetourFeeType3, detourFeeType3)
-			value.MultiTourPercent = append(value.MultiTourPercent, multiTourPercent)
+			if reference != "" {
+				value.Reference = append(value.Reference, reference)
+			}
+			if detourFeeType != "" {
+				value.DetourFeeType = append(value.DetourFeeType, detourFeeType)
+			}
+			if detourFeeType3 != "" {
+				value.DetourFeeType3 = append(value.DetourFeeType3, detourFeeType3)
+			}
+			if multiTourPercent != "" {
+				value.MultiTourPercent = append(value.MultiTourPercent, multiTourPercent)
+			}
 			value.DetourFee += detourFee
 			value.DetourFee3 += detourFee3
 			if totalFee != -1 {
@@ -920,10 +930,18 @@ func parseGansunData(gansunSheet *xlsx.Sheet, parseType string) map[models.Sheet
 
 			value := result[*each]
 			value.Idx = append(value.Idx, no)
-			value.Reference = append(value.Reference, reference)
-			value.DetourFeeType = append(value.DetourFeeType, detourFeeType)
-			value.DetourFeeType3 = append(value.DetourFeeType3, detourFeeType3)
-			value.MultiTourPercent = append(value.MultiTourPercent, multiTourPercent)
+			if reference != "" {
+				value.Reference = append(value.Reference, reference)
+			}
+			if detourFeeType != "" {
+				value.DetourFeeType = append(value.DetourFeeType, detourFeeType)
+			}
+			if detourFeeType3 != "" {
+				value.DetourFeeType3 = append(value.DetourFeeType3, detourFeeType3)
+			}
+			if multiTourPercent != "" {
+				value.MultiTourPercent = append(value.MultiTourPercent, multiTourPercent)
+			}
 			value.DetourFee += detourFee
 			value.DetourFee3 += detourFee3
 			if totalFee != -1 {
