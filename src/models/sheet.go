@@ -33,7 +33,8 @@ type CompData struct {
 	Destination      string
 	IsGansun         bool
 	IsGansunOneway   bool
-	Reference        []string
+	J2Reference      []string
+	CJReference      []string
 	J2No             []string
 	CJNo             []string
 	GansunNo         []string

@@ -57,7 +57,9 @@ func main() {
 	// cjSheetName := "sheet1"
 	// gansunSheetName := "sheet1"
 	// resultFileName := "result.csv"
-	// parseType := "1"
+	// parseType := "sj"
+	// companyFilter := "sj"
+	// errStr := ""
 	if j2SheetName == "" || cjSheetName == "" || gansunSheetName == "" || resultFileName == "" {
 		fmt.Println(models.InputErr)
 		return
@@ -148,11 +150,11 @@ func writeCSVData(resultFileName string, comData []models.CompData) {
 
 	// Comp 내용 쓰기
 	if cjContain && gansunContain {
-		resWr.Write([]byte("날짜, 차량번호, 출발, 도착, 간선여부, J2, CJ, Gansun, 추가운임구분, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 청구, 총운송비용, 비고, 완료단계\n"))
+		resWr.Write([]byte("날짜, 차량번호, 출발, 도착, 간선여부, J2, CJ, Gansun, 추가운임구분, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 청구, 총운송비용, SJ비고, CJ비고, 완료단계\n"))
 	} else if cjContain && !gansunContain {
-		resWr.Write([]byte("날짜, 차량번호, 출발, 도착, 간선여부, J2, CJ, 추가운임구분, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 청구, 총운송비용, 비고, 완료단계\n"))
+		resWr.Write([]byte("날짜, 차량번호, 출발, 도착, 간선여부, J2, CJ, 추가운임구분, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 청구, 총운송비용, SJ비고, CJ비고, 완료단계\n"))
 	} else if !cjContain && gansunContain {
-		resWr.Write([]byte("날짜, 차량번호, 출발, 도착, 간선여부, J2, Gansun, 추가운임구분, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 청구, 총운송비용, 비고, 완료단계\n"))
+		resWr.Write([]byte("날짜, 차량번호, 출발, 도착, 간선여부, J2, Gansun, 추가운임구분, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 청구, 총운송비용, SJ비고, CJ비고, 완료단계\n"))
 	}
 
 	for _, value := range comData {
@@ -164,7 +166,7 @@ func writeCSVData(resultFileName string, comData []models.CompData) {
 		}
 
 		// 자체 No, 날짜, 차량번호, 출발, 도착, 간선
-		each := value.Date + "," + value.LicensePlate + "," + value.Source + "," + value.Destination + "," + gansun
+		each := value.Date[0:10] + "," + value.LicensePlate + "," + value.Source + "," + value.Destination + "," + gansun
 
 		// No 숫자, 비고
 		if cjContain && gansunContain {
@@ -197,7 +199,7 @@ func writeCSVData(resultFileName string, comData []models.CompData) {
 			}
 		}
 
-		each = each + "," + utility.GetArrayData(value.DetourFeeType, " / ") + "," + strconv.Itoa(value.DetourFee) + "," + utility.GetArrayData(value.DetourFeeType3, " / ") + "," + strconv.Itoa(value.DetourFee3) + "," + utility.GetArrayData(value.MultiTourPercent, " / ") + "," + strconv.Itoa(value.FirstTotalFee) + "," + strconv.Itoa(value.SecondTotalFee) + "," + utility.GetArrayData(value.Reference, " / ") + "," + utility.GetStage(value.Stage) + "\n"
+		each = each + "," + utility.GetArrayData(value.DetourFeeType, " / ") + "," + strconv.Itoa(value.DetourFee) + "," + utility.GetArrayData(value.DetourFeeType3, " / ") + "," + strconv.Itoa(value.DetourFee3) + "," + utility.GetArrayData(value.MultiTourPercent, " / ") + "," + strconv.Itoa(value.FirstTotalFee) + "," + strconv.Itoa(value.SecondTotalFee) + "," + utility.GetArrayData(value.J2Reference, " / ") + "," + utility.GetArrayData(value.CJReference, " / ") + "," + utility.GetStage(value.Stage) + "\n"
 		resWr.Write([]byte(each))
 		w.Flush()
 	}
@@ -232,7 +234,8 @@ func compareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 					IsGansunOneway:   false,
 					J2No:             value.Idx,
 					CJNo:             cjValue.Idx,
-					Reference:        cjValue.Reference,
+					J2Reference:      value.Reference,
+					CJReference:      cjValue.Reference,
 					DetourFeeType:    cjValue.DetourFeeType,
 					DetourFee:        cjValue.DetourFee,
 					DetourFeeType3:   cjValue.DetourFeeType3,
@@ -260,7 +263,8 @@ func compareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 				IsGansunOneway:   false,
 				J2No:             value.Idx,
 				CJNo:             cjValue.Idx,
-				Reference:        cjValue.Reference,
+				J2Reference:      value.Reference,
+				CJReference:      cjValue.Reference,
 				DetourFeeType:    cjValue.DetourFeeType,
 				DetourFee:        cjValue.DetourFee,
 				DetourFeeType3:   cjValue.DetourFeeType3,
@@ -289,7 +293,7 @@ func compareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 				IsGansun:       key.Gansun,
 				IsGansunOneway: key.GansunOneWay,
 				J2No:           value.Idx,
-				Reference:      value.Reference,
+				J2Reference:    value.Reference,
 				J2:             true,
 				CJ:             false,
 				Gansun:         false,
@@ -317,7 +321,8 @@ func compareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 					IsGansunOneway:   key.GansunOneWay,
 					J2No:             value.Idx,
 					GansunNo:         gansunValue.Idx,
-					Reference:        gansunValue.Reference,
+					J2Reference:      value.Reference,
+					CJReference:      gansunValue.Reference,
 					DetourFeeType:    gansunValue.DetourFeeType,
 					DetourFee:        gansunValue.DetourFee,
 					DetourFeeType3:   gansunValue.DetourFeeType3,
@@ -345,7 +350,8 @@ func compareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 				IsGansunOneway:   key.GansunOneWay,
 				J2No:             value.Idx,
 				GansunNo:         gansunValue.Idx,
-				Reference:        gansunValue.Reference,
+				J2Reference:      value.Reference,
+				CJReference:      gansunValue.Reference,
 				DetourFeeType:    gansunValue.DetourFeeType,
 				DetourFee:        gansunValue.DetourFee,
 				DetourFeeType3:   gansunValue.DetourFeeType3,
@@ -372,7 +378,7 @@ func compareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 			IsGansun:       key.Gansun,
 			IsGansunOneway: key.GansunOneWay,
 			J2No:           value.Idx,
-			Reference:      value.Reference,
+			J2Reference:    value.Reference,
 			J2:             true,
 			CJ:             false,
 			Gansun:         false,
@@ -390,7 +396,7 @@ func compareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 			IsGansun:         false,
 			IsGansunOneway:   false,
 			CJNo:             value.Idx,
-			Reference:        value.Reference,
+			CJReference:      value.Reference,
 			DetourFeeType:    value.DetourFeeType,
 			DetourFee:        value.DetourFee,
 			DetourFeeType3:   value.DetourFeeType3,
@@ -413,7 +419,7 @@ func compareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 			IsGansun:         key.Gansun,
 			IsGansunOneway:   key.GansunOneWay,
 			GansunNo:         value.Idx,
-			Reference:        value.Reference,
+			CJReference:      value.Reference,
 			DetourFeeType:    value.DetourFeeType,
 			DetourFee:        value.DetourFee,
 			DetourFeeType3:   value.DetourFeeType3,
@@ -512,10 +518,12 @@ func parseJ2Data(j2Sheet *xlsx.Sheet, parseType, companyFilter string) map[model
 		// 후불
 		postPaidCell, _ := j2Sheet.Cell(idx, postPaidIdx)
 		postPaid := postPaidCell.String()
+		postPaid = strings.Trim(postPaid, " ")
 
 		// J2후불
 		j2PostPaidCell, _ := j2Sheet.Cell(idx, j2PostPaidIdx)
 		j2PostPaid := j2PostPaidCell.String()
+		j2PostPaid = strings.Trim(j2PostPaid, " ")
 
 		// 청구
 		totalFeeCell, _ := j2Sheet.Cell(idx, totalFeeIdx)
@@ -573,6 +581,7 @@ func parseJ2Data(j2Sheet *xlsx.Sheet, parseType, companyFilter string) map[model
 		}
 
 		if strings.Contains(reference, ",") {
+			reference = strings.Replace(reference, ",", "", -1)
 			reference = "\"" + reference + "\""
 		}
 
@@ -607,6 +616,8 @@ func parseJ2Data(j2Sheet *xlsx.Sheet, parseType, companyFilter string) map[model
 			value.Stage = stage
 			if totalFee != -1 {
 				value.TotalFee = append(value.TotalFee, totalFee)
+			} else {
+				value.TotalFee = append(value.TotalFee, 0)
 			}
 
 			// 간선일때
@@ -693,6 +704,7 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 		referenceCell, _ := cjSheet.Cell(idx, referenceIdx)
 		reference := referenceCell.String()
 		if strings.Contains(reference, ",") {
+			reference = strings.Replace(reference, ",", "", -1)
 			reference = "\"" + reference + "\""
 		}
 
@@ -774,6 +786,8 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 			value.DetourFee3 += detourFee3
 			if totalFee != -1 {
 				value.TotalFee = append(value.TotalFee, totalFee)
+			} else {
+				value.TotalFee = append(value.TotalFee, 0)
 			}
 
 			result[*each] = value
@@ -865,6 +879,7 @@ func parseGansunData(gansunSheet *xlsx.Sheet, parseType string) map[models.Sheet
 		referenceCell, _ := gansunSheet.Cell(idx, referenceIdx)
 		reference := referenceCell.String()
 		if strings.Contains(reference, ",") {
+			reference = strings.Replace(reference, ",", "", -1)
 			reference = "\"" + reference + "\""
 		}
 
@@ -946,6 +961,8 @@ func parseGansunData(gansunSheet *xlsx.Sheet, parseType string) map[models.Sheet
 			value.DetourFee3 += detourFee3
 			if totalFee != -1 {
 				value.TotalFee = append(value.TotalFee, totalFee)
+			} else {
+				value.TotalFee = append(value.TotalFee, 0)
 			}
 
 			result[*each] = value
