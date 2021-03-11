@@ -57,8 +57,8 @@ func main() {
 	// cjSheetName := "sheet1"
 	// gansunSheetName := "sheet1"
 	// resultFileName := "result.csv"
-	// parseType := "sj"
-	// companyFilter := "sj"
+	// parseType := "mp"
+	// companyFilter := "mp"
 	// errStr := ""
 	if j2SheetName == "" || cjSheetName == "" || gansunSheetName == "" || resultFileName == "" {
 		fmt.Println(models.InputErr)
@@ -150,11 +150,11 @@ func writeCSVData(resultFileName string, comData []models.CompData) {
 
 	// Comp 내용 쓰기
 	if cjContain && gansunContain {
-		resWr.Write([]byte("날짜, 차량번호, 출발, 도착, 간선여부, J2, CJ, Gansun, 추가운임구분, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 청구, 총운송비용, SJ비고, CJ비고, 완료단계\n"))
+		resWr.Write([]byte("날짜, 차량번호, 출발, 도착, 간선여부, J2, CJ, Gansun, 추가운임구분, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 청구, " + configFile.Cj.TotalFee + ", SJ비고, CJ비고, 완료단계\n"))
 	} else if cjContain && !gansunContain {
-		resWr.Write([]byte("날짜, 차량번호, 출발, 도착, 간선여부, J2, CJ, 추가운임구분, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 청구, 총운송비용, SJ비고, CJ비고, 완료단계\n"))
+		resWr.Write([]byte("날짜, 차량번호, 출발, 도착, 간선여부, J2, CJ, 추가운임구분, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 청구, " + configFile.Cj.TotalFee + ", SJ비고, CJ비고, 완료단계\n"))
 	} else if !cjContain && gansunContain {
-		resWr.Write([]byte("날짜, 차량번호, 출발, 도착, 간선여부, J2, Gansun, 추가운임구분, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 청구, 총운송비용, SJ비고, CJ비고, 완료단계\n"))
+		resWr.Write([]byte("날짜, 차량번호, 출발, 도착, 간선여부, J2, Gansun, 추가운임구분, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 청구, " + configFile.Gansun.TotalFee + ", SJ비고, CJ비고, 완료단계\n"))
 	}
 
 	for _, value := range comData {
@@ -529,6 +529,7 @@ func parseJ2Data(j2Sheet *xlsx.Sheet, parseType, companyFilter string) map[model
 		totalFeeCell, _ := j2Sheet.Cell(idx, totalFeeIdx)
 		totalFeeStr := totalFeeCell.String()
 		totalFeeStr = strings.Replace(totalFeeStr, ",", "", -1)
+		totalFeeStr = strings.Trim(totalFeeStr, " ")
 		tempTotalFee, err := strconv.Atoi(totalFeeStr)
 		totalFee := -1
 		if err == nil {
@@ -712,6 +713,7 @@ func parseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 		totalFeeCell, _ := cjSheet.Cell(idx, totalFeeIdx)
 		totalFeeStr := totalFeeCell.String()
 		totalFeeStr = strings.Replace(totalFeeStr, ",", "", -1)
+		totalFeeStr = strings.Trim(totalFeeStr, " ")
 		tempTotalFee, err := strconv.Atoi(totalFeeStr)
 		totalFee := -1
 		if err == nil {
@@ -887,6 +889,7 @@ func parseGansunData(gansunSheet *xlsx.Sheet, parseType string) map[models.Sheet
 		totalFeeCell, _ := gansunSheet.Cell(idx, totalFeeIdx)
 		totalFeeStr := totalFeeCell.String()
 		totalFeeStr = strings.Replace(totalFeeStr, ",", "", -1)
+		totalFeeStr = strings.Trim(totalFeeStr, " ")
 		tempTotalFee, err := strconv.Atoi(totalFeeStr)
 		totalFee := -1
 		if err == nil {
