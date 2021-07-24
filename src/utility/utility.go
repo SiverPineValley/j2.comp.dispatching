@@ -167,3 +167,10 @@ func checkLayover(key string) string {
 	}
 	return key
 }
+
+func CheckStage(stage, j2, cj int) int {
+	if stage == 2 && j2 == cj {
+		return 3
+	}
+	return stage
+}

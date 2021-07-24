@@ -11,7 +11,7 @@
             "mode": "auto",
             "program": "D:/workspace/go/src/j2.comp.dispatching/main.go",
             "env": {},
-            "args": ["j2.xlsx", "cj.xlsx", "gansun.xlsx"],
+            "args": ["j2.xlsm", "cj.xlsx", "gansun.xlsx"],
         }
     ]
 }

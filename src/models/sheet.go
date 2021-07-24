@@ -18,9 +18,10 @@ type CompReturn struct {
 	Idx              []string
 	Reference        []string
 	DetourFeeType    []string
-	DetourFee        int
+	DetourFee        []string
 	DetourFeeType3   []string
-	DetourFee3       int
+	DetourFee3       []string
+	DetourFair       []string
 	MultiTourPercent []string
 	Stage            int
 	TotalFee         []int
@@ -33,16 +34,17 @@ type CompData struct {
 	Destination      string
 	IsGansun         bool
 	IsGansunOneway   bool
-	J2Reference      []string
-	CJReference      []string
+	J2Reference      string
+	CJReference      string
 	J2No             []string
 	CJNo             []string
 	GansunNo         []string
-	DetourFeeType    []string
-	DetourFee        int
-	DetourFeeType3   []string
-	DetourFee3       int
-	MultiTourPercent []string
+	DetourFeeType    string
+	DetourFee        string
+	DetourFeeType3   string
+	DetourFee3       string
+	DetourFair       string
+	MultiTourPercent string
 	J2               bool
 	CJ               bool
 	Gansun           bool

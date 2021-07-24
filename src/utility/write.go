@@ -30,11 +30,11 @@ func WriteCSVData(resultFileName string, comData []models.CompData) {
 
 	// Comp 내용 쓰기
 	if CjContain && GansunContain {
-		resWr.Write([]byte("날짜, 차량번호, 출발, 도착, 간선여부, J2, CJ, Gansun, 추가운임구분, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 청구, " + ConfigFile.Cj.TotalFee + ", SJ비고, CJ비고, 완료단계\n"))
+		resWr.Write([]byte("날짜, 차량번호, 출발, 도착, 간선여부, J2, CJ, Gansun, 톤수, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 경유비, 청구, " + ConfigFile.Cj.TotalFee + ", SJ비고, CJ비고, 완료단계\n"))
 	} else if CjContain && !GansunContain {
-		resWr.Write([]byte("날짜, 차량번호, 출발, 도착, 간선여부, J2, CJ, 추가운임구분, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 청구, " + ConfigFile.Cj.TotalFee + ", SJ비고, CJ비고, 완료단계\n"))
+		resWr.Write([]byte("날짜, 차량번호, 출발, 도착, 간선여부, J2, CJ, 톤수, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 경유비, 청구, " + ConfigFile.Cj.TotalFee + ", SJ비고, CJ비고, 완료단계\n"))
 	} else if !CjContain && GansunContain {
-		resWr.Write([]byte("날짜, 차량번호, 출발, 도착, 간선여부, J2, Gansun, 추가운임구분, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 청구, " + ConfigFile.Gansun.TotalFee + ", SJ비고, CJ비고, 완료단계\n"))
+		resWr.Write([]byte("날짜, 차량번호, 출발, 도착, 간선여부, J2, Gansun, 톤수, 추가운임, 추가운임구분3, 추가운임3, 다회전기준요율, 경유비, 청구, " + ConfigFile.Gansun.TotalFee + ", SJ비고, CJ비고, 완료단계\n"))
 	}
 
 	for _, value := range comData {
@@ -79,7 +79,7 @@ func WriteCSVData(resultFileName string, comData []models.CompData) {
 			}
 		}
 
-		each = each + "," + GetArrayData(value.DetourFeeType, " / ") + "," + strconv.Itoa(value.DetourFee) + "," + GetArrayData(value.DetourFeeType3, " / ") + "," + strconv.Itoa(value.DetourFee3) + "," + GetArrayData(value.MultiTourPercent, " / ") + "," + strconv.Itoa(value.FirstTotalFee) + "," + strconv.Itoa(value.SecondTotalFee) + "," + GetArrayData(value.J2Reference, " / ") + "," + GetArrayData(value.CJReference, " / ") + "," + GetStage(value.Stage) + "\n"
+		each = each + "," + value.DetourFeeType + "," + value.DetourFee + "," + value.DetourFeeType3 + "," + value.DetourFee3 + "," + value.MultiTourPercent + "," + value.DetourFair + "," + strconv.Itoa(value.FirstTotalFee) + "," + strconv.Itoa(value.SecondTotalFee) + "," + value.J2Reference + "," + value.CJReference + "," + GetStage(value.Stage) + "\n"
 		resWr.Write([]byte(each))
 		w.Flush()
 	}

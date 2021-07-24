@@ -33,6 +33,7 @@ type ColumnTitle struct {
 	DetourFee        string `toml:"detourFee"`
 	DetourFeeType3   string `toml:"detourFeeType3"`
 	DetourFee3       string `toml:"detourFee3"`
+	DetourFair       string `toml:"detourFair"`
 	MultiTourPercent string `toml:"multiTourPercent"`
 	Company          string `toml:"company"`
 	Postpaid         string `toml:"postpaid"`
