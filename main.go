@@ -46,8 +46,8 @@ func main() {
 	// cjSheetName := "sheet1"
 	// gansunSheetName := "sheet1"
 	// resultFileName := "result.csv"
-	// parseType := "mp"
-	// companyFilter := "mp"
+	// parseType := "이그린"
+	// companyFilter := "이그린"
 	// errStr := ""
 	if j2SheetName == "" || cjSheetName == "" || gansunSheetName == "" || resultFileName == "" {
 		fmt.Println(models.InputErr)
