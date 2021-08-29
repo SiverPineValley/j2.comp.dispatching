@@ -239,9 +239,9 @@ func CompareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 				LicensePlate:     key.LicensePlate,
 				Source:           key.Source,
 				Destination:      key.Destination,
-				IsGansun:         false,
-				IsGansunOneway:   false,
-				CJNo:             value.Idx,
+				IsGansun:         key.Gansun,
+				IsGansunOneway:   key.GansunOneWay,
+				GansunNo:         value.Idx,
 				CJReference:      value.Reference[idx],
 				DetourFeeType:    value.DetourFeeType[idx],
 				DetourFee:        value.DetourFee[idx],
@@ -250,8 +250,8 @@ func CompareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 				DetourFair:       value.DetourFair[idx],
 				MultiTourPercent: value.MultiTourPercent[idx],
 				J2:               false,
-				CJ:               true,
-				Gansun:           false,
+				CJ:               false,
+				Gansun:           true,
 				Stage:            0,
 			})
 		}
