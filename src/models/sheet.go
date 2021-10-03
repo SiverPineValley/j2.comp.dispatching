@@ -16,6 +16,7 @@ type SheetComp struct {
 
 type CompReturn struct {
 	Idx              []string
+	SourcePostfix    string
 	Reference        []string
 	DetourFeeType    []string
 	DetourFee        []string

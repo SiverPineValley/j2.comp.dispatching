@@ -4,7 +4,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/tealeg/xlsx/v3"
 	"js.comp.dispatching/src/config"
@@ -33,10 +32,15 @@ func CompareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 			})
 
 			for idx, _ := range value.TotalFee {
+				source := key.Source
+				if cjValue.SourcePostfix != "" {
+					source = source + cjValue.SourcePostfix
+				}
+
 				result = append(result, models.CompData{
 					Date:             key.Date,
 					LicensePlate:     key.LicensePlate,
-					Source:           key.Source,
+					Source:           source,
 					Destination:      key.Destination,
 					IsGansun:         false,
 					IsGansunOneway:   false,
@@ -64,10 +68,14 @@ func CompareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 			continue
 		} else {
 			// J2, CJ 개수 다를때
+			source := key.Source
+			if cjValue.SourcePostfix != "" {
+				source = source + cjValue.SourcePostfix
+			}
 			result = append(result, models.CompData{
 				Date:             key.Date,
 				LicensePlate:     key.LicensePlate,
-				Source:           key.Source,
+				Source:           source,
 				Destination:      key.Destination,
 				IsGansun:         false,
 				IsGansunOneway:   false,
@@ -126,11 +134,15 @@ func CompareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 				return gansunValue.TotalFee[i] < gansunValue.TotalFee[j]
 			})
 
+			source := key.Source
+			if gansunValue.SourcePostfix != "" {
+				source = source + gansunValue.SourcePostfix
+			}
 			for idx, _ := range value.TotalFee {
 				result = append(result, models.CompData{
 					Date:             key.Date,
 					LicensePlate:     key.LicensePlate,
-					Source:           key.Source,
+					Source:           source,
 					Destination:      key.Destination,
 					IsGansun:         key.Gansun,
 					IsGansunOneway:   key.GansunOneWay,
@@ -157,10 +169,15 @@ func CompareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 			delete(gansunData, key)
 			continue
 		} else {
+			source := key.Source
+			if gansunValue.SourcePostfix != "" {
+				source = source + gansunValue.SourcePostfix
+			}
+
 			result = append(result, models.CompData{
 				Date:             key.Date,
 				LicensePlate:     key.LicensePlate,
-				Source:           key.Source,
+				Source:           source,
 				Destination:      key.Destination,
 				IsGansun:         key.Gansun,
 				IsGansunOneway:   key.GansunOneWay,
@@ -208,10 +225,15 @@ func CompareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 	// CJ에만 있는 녀석
 	for key, value := range cjData {
 		for idx, _ := range value.Idx {
+			source := key.Source
+			if value.SourcePostfix != "" {
+				source = source + value.SourcePostfix
+			}
+
 			result = append(result, models.CompData{
 				Date:             key.Date,
 				LicensePlate:     key.LicensePlate,
-				Source:           key.Source,
+				Source:           source,
 				Destination:      key.Destination,
 				IsGansun:         false,
 				IsGansunOneway:   false,
@@ -234,10 +256,15 @@ func CompareData(j2Data, cjData, gansunData map[models.SheetComp]models.CompRetu
 	// 간선에만 있는 녀석
 	for key, value := range gansunData {
 		for idx, _ := range value.Idx {
+			source := key.Source
+			if value.SourcePostfix != "" {
+				source = source + value.SourcePostfix
+			}
+
 			result = append(result, models.CompData{
 				Date:             key.Date,
 				LicensePlate:     key.LicensePlate,
-				Source:           key.Source,
+				Source:           source,
 				Destination:      key.Destination,
 				IsGansun:         key.Gansun,
 				IsGansunOneway:   key.GansunOneWay,
@@ -418,13 +445,13 @@ func ParseJ2Data(j2Sheet *xlsx.Sheet, parseType, companyFilter string) map[model
 		source = checkLayover(source)
 
 		// 시프트면 하루 + 1, 토요일이면 + 2
-		if strings.Contains(reference, "시프트") && !isGansun {
-			if date.Weekday() == time.Saturday {
-				date = date.AddDate(0, 0, 2)
-			} else {
-				date = date.AddDate(0, 0, 1)
-			}
-		}
+		// if strings.Contains(reference, "시프트") && !isGansun {
+		// 	if date.Weekday() == time.Saturday {
+		// 		date = date.AddDate(0, 0, 2)
+		// 	} else {
+		// 		date = date.AddDate(0, 0, 1)
+		// 	}
+		// }
 
 		if strings.Contains(reference, ",") {
 			reference = strings.Replace(reference, ",", "", -1)
@@ -530,11 +557,19 @@ func ParseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 
 		// 출발
 		sourceCell, _ := cjSheet.Cell(idx, sourceIdx)
+		var sourcePostfix string
 		source := sourceCell.String()
-		source = strings.Replace(source, " ", "", -1)   // Trim
-		source = strings.Replace(source, "Sub", "", -1) // Sub 제거
-		source = strings.Replace(source, "Hub", "", -1) // Hub 제거
-		source = strings.Replace(source, "콘솔", "", -1)  // 콘솔 제거
+		source = strings.Replace(source, " ", "", -1) // Trim
+		if strings.Contains(source, "Sub") {
+			source = strings.Replace(source, "Sub", "", -1) // Sub 제거
+			sourcePostfix = "Sub"
+		} else if strings.Contains(source, "Hub") {
+			source = strings.Replace(source, "Hub", "", -1) // Hub 제거
+			sourcePostfix = "Hub"
+		} else if strings.Contains(source, "콘솔") {
+			source = strings.Replace(source, "콘솔", "", -1) // 콘솔 제거
+			sourcePostfix = "콘솔"
+		}
 		source = checkLayover(source)
 
 		// 도착
@@ -608,6 +643,7 @@ func ParseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 
 		value := result[*each]
 		value.Idx = append(value.Idx, no)
+		value.SourcePostfix = sourcePostfix
 		value.Reference = append(value.Reference, reference)
 		value.DetourFeeType3 = append(value.DetourFeeType3, detourFeeType3)
 		value.DetourFeeType = append(value.DetourFeeType, detourFeeType)
@@ -682,13 +718,21 @@ func ParseGansunData(gansunSheet *xlsx.Sheet, parseType string) map[models.Sheet
 		source := sourceCell.String()
 		source = strings.Replace(source, " ", "", -1) // Trim
 
+		var sourcePostfix string
 		if source == "이천MP" {
 			source = strings.Replace(source, "이천MP", "이천", -1) // 이천MP -> 이천
 		}
 
-		source = strings.Replace(source, "Sub", "", -1) // Sub 제거
-		source = strings.Replace(source, "Hub", "", -1) // Hub 제거
-		source = strings.Replace(source, "콘솔", "", -1)  // 콘솔 제거
+		if strings.Contains(source, "Sub") {
+			source = strings.Replace(source, "Sub", "", -1) // Sub 제거
+			sourcePostfix = "Sub"
+		} else if strings.Contains(source, "Hub") {
+			source = strings.Replace(source, "Hub", "", -1) // Hub 제거
+			sourcePostfix = "Hub"
+		} else if strings.Contains(source, "콘솔") {
+			source = strings.Replace(source, "콘솔", "", -1) // 콘솔 제거
+			sourcePostfix = "콘솔"
+		}
 		source = checkLayover(source)
 
 		// 도착
@@ -769,6 +813,7 @@ func ParseGansunData(gansunSheet *xlsx.Sheet, parseType string) map[models.Sheet
 
 		value := result[*each]
 		value.Idx = append(value.Idx, no)
+		value.SourcePostfix = sourcePostfix
 		value.Reference = append(value.Reference, reference)
 		value.DetourFeeType3 = append(value.DetourFeeType3, detourFeeType3)
 		value.DetourFeeType = append(value.DetourFeeType, detourFeeType)
