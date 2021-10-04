@@ -560,15 +560,16 @@ func ParseCJData(cjSheet *xlsx.Sheet, parseType string) map[models.SheetComp]mod
 		var sourcePostfix string
 		source := sourceCell.String()
 		source = strings.Replace(source, " ", "", -1) // Trim
+		if strings.Contains(source, "콘솔") {
+			source = strings.Replace(source, "콘솔", "", -1) // 콘솔 제거
+			sourcePostfix += "콘솔"
+		}
 		if strings.Contains(source, "Sub") {
 			source = strings.Replace(source, "Sub", "", -1) // Sub 제거
-			sourcePostfix = "Sub"
+			sourcePostfix += "Sub"
 		} else if strings.Contains(source, "Hub") {
 			source = strings.Replace(source, "Hub", "", -1) // Hub 제거
-			sourcePostfix = "Hub"
-		} else if strings.Contains(source, "콘솔") {
-			source = strings.Replace(source, "콘솔", "", -1) // 콘솔 제거
-			sourcePostfix = "콘솔"
+			sourcePostfix += "Hub"
 		}
 		source = checkLayover(source)
 
@@ -719,19 +720,16 @@ func ParseGansunData(gansunSheet *xlsx.Sheet, parseType string) map[models.Sheet
 		source = strings.Replace(source, " ", "", -1) // Trim
 
 		var sourcePostfix string
-		if source == "이천MP" {
-			source = strings.Replace(source, "이천MP", "이천", -1) // 이천MP -> 이천
+		if strings.Contains(source, "콘솔") {
+			source = strings.Replace(source, "콘솔", "", -1) // 콘솔 제거
+			sourcePostfix += "콘솔"
 		}
-
 		if strings.Contains(source, "Sub") {
 			source = strings.Replace(source, "Sub", "", -1) // Sub 제거
-			sourcePostfix = "Sub"
+			sourcePostfix += "Sub"
 		} else if strings.Contains(source, "Hub") {
 			source = strings.Replace(source, "Hub", "", -1) // Hub 제거
-			sourcePostfix = "Hub"
-		} else if strings.Contains(source, "콘솔") {
-			source = strings.Replace(source, "콘솔", "", -1) // 콘솔 제거
-			sourcePostfix = "콘솔"
+			sourcePostfix += "Hub"
 		}
 		source = checkLayover(source)
 
